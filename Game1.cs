@@ -37,6 +37,7 @@ namespace ui
             Form.BackColor = System.Drawing.Color.Yellow;
             // Avoid the flash the window shows when the application launches (-32000x-32000 is where windows places minimized windows)
             Form.Location = new System.Drawing.Point(100, 100);
+            Window.IsBorderless = true;
 
             base.Initialize();
         }
@@ -56,41 +57,32 @@ namespace ui
             this._graphics.PreferredBackBufferHeight = 200;
             this._graphics.ApplyChanges();
 
-            var clientRect = new RECT();
-
-            // 無邊框
-            var marg = new Margins
-            {
-                cxLeftWidth = 0,
-                cyTopHeight = 0,
-                cxRightWidth = clientRect.Right,
-                cyBottomHeight = clientRect.Bottom
-            };
-            // 沒設會黑畫面
-            DwmExtendFrameIntoClientArea(FormHandle, ref marg);
-            // 修改視窗樣式 (關鍵)
-            SetWindowLong(FormHandle, GWL_STYLE, CS_HREDRAW | CS_VREDRAW);
-            // 視窗透明度(沒差)
-            SetLayeredWindowAttributes(FormHandle, 0, 255, 2);
+         
+            //// 修改視窗樣式 (關鍵)
+            //SetWindowLong(FormHandle, GWL_STYLE, CS_HREDRAW | CS_VREDRAW);
+            //// 視窗透明度(沒差)
+            //SetLayeredWindowAttributes(FormHandle, 0, 0, 2);
             base.BeginRun();
 
         }
 
         protected override void Update(GameTime gameTime)
         {
-            var clientRect = new RECT();
             var marg = new Margins
             {
                 cxLeftWidth = 0,
                 cyTopHeight = 0,
-                cxRightWidth = clientRect.Right,
-                cyBottomHeight = clientRect.Bottom
+                cxRightWidth = 100,
+                cyBottomHeight = 100
             };
-            // 沒設會黑畫面
+            // 無邊框
             DwmExtendFrameIntoClientArea(FormHandle, ref marg);
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == Microsoft.Xna.Framework.Input.ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Microsoft.Xna.Framework.Input.Keys.P))
             {
-
+                // 修改視窗樣式 (關鍵)
+                SetWindowLong(FormHandle, GWL_STYLE, CS_HREDRAW | CS_VREDRAW);
+                // 視窗透明度(沒差)
+                SetLayeredWindowAttributes(FormHandle, 0, 0, 2);
 
             }
             // TODO: Add your update logic here
