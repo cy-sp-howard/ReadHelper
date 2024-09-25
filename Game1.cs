@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Windows.Forms;
+using static ui.WindowUtil;
 
 namespace ui
 {
@@ -33,7 +34,7 @@ namespace ui
             Form = Control.FromHandle(FormHandle).FindForm();
 
 
-            Form.BackColor = System.Drawing.Color.Black;
+            Form.BackColor = System.Drawing.Color.Yellow;
             // Avoid the flash the window shows when the application launches (-32000x-32000 is where windows places minimized windows)
             Form.Location = new System.Drawing.Point(100, 100);
 
@@ -50,18 +51,43 @@ namespace ui
         }
         protected override void BeginRun()
         {
-
+            // 視窗大小
             this._graphics.PreferredBackBufferWidth = 200;
-          this._graphics.PreferredBackBufferHeight = 10;
+            this._graphics.PreferredBackBufferHeight = 200;
             this._graphics.ApplyChanges();
+
+            var clientRect = new RECT();
+
+            // 無邊框
+            var marg = new Margins
+            {
+                cxLeftWidth = 0,
+                cyTopHeight = 0,
+                cxRightWidth = clientRect.Right,
+                cyBottomHeight = clientRect.Bottom
+            };
+            // 沒設會黑畫面
+            DwmExtendFrameIntoClientArea(FormHandle, ref marg);
+            // 修改視窗樣式 (關鍵)
+            SetWindowLong(FormHandle, GWL_STYLE, CS_HREDRAW | CS_VREDRAW);
+            // 視窗透明度(沒差)
+            SetLayeredWindowAttributes(FormHandle, 0, 255, 2);
             base.BeginRun();
 
         }
 
         protected override void Update(GameTime gameTime)
         {
-
-            Form.Location = new System.Drawing.Point(100, 100);
+            var clientRect = new RECT();
+            var marg = new Margins
+            {
+                cxLeftWidth = 0,
+                cyTopHeight = 0,
+                cxRightWidth = clientRect.Right,
+                cyBottomHeight = clientRect.Bottom
+            };
+            // 沒設會黑畫面
+            DwmExtendFrameIntoClientArea(FormHandle, ref marg);
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == Microsoft.Xna.Framework.Input.ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Microsoft.Xna.Framework.Input.Keys.P))
             {
 
@@ -69,21 +95,21 @@ namespace ui
             }
             // TODO: Add your update logic here
 
-        
-                //{
+
+            //{
 
 
-                //    //當窗口的水平垂直尺寸改變時，整個窗口區域都會被重新繪製
-                //    WindowUtil.SetWindowLong(FormHandle, WindowUtil.GWL_STYLE, WindowUtil.CS_HREDRAW | WindowUtil.CS_VREDRAW);
-                //    //WindowUtil.SetLayeredWindowAttributes(FormHandle, 0, 255, 2);
-                //}
+            //    //當窗口的水平垂直尺寸改變時，整個窗口區域都會被重新繪製
+            //    WindowUtil.SetWindowLong(FormHandle, WindowUtil.GWL_STYLE, WindowUtil.CS_HREDRAW | WindowUtil.CS_VREDRAW);
+            //    //WindowUtil.SetLayeredWindowAttributes(FormHandle, 0, 255, 2);
+            //}
 
-                base.Update(gameTime);
+            base.Update(gameTime);
         }
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.Transparent);
             _spriteBatch.Begin();
             _spriteBatch.DrawString(font, "FPS: 123", new Vector2(Window.ClientBounds.Width / 2, 25), Color.Red);
 
