@@ -43,6 +43,11 @@ namespace ui
             Form.Location = new System.Drawing.Point(-30000, -30000);
             Window.IsBorderless = true;
 
+
+            Graphics.PreferredBackBufferWidth = 1000;
+            Graphics.PreferredBackBufferHeight = 500;
+            Graphics.ApplyChanges();
+
             base.Initialize();
         }
 
@@ -59,12 +64,6 @@ namespace ui
         }
         protected override void BeginRun()
         {
-            // 視窗大小
-            this._graphics.PreferredBackBufferWidth = 1000;
-            this._graphics.PreferredBackBufferHeight = 500;
-            this._graphics.ApplyChanges();
-
-         
             base.BeginRun();
 
         }
@@ -75,11 +74,11 @@ namespace ui
             {
                 cxLeftWidth = 0,
                 cyTopHeight = 0,
-                cxRightWidth = this._graphics.PreferredBackBufferWidth,
-                cyBottomHeight = this._graphics.PreferredBackBufferHeight
+                cxRightWidth = Graphics.PreferredBackBufferWidth,
+                cyBottomHeight = Graphics.PreferredBackBufferHeight
             };
             // 無邊框
-            DwmExtendFrameIntoClientArea(FormHandle, ref marg);
+            //DwmExtendFrameIntoClientArea(FormHandle, ref marg);
             foreach (var item in _services)
             {
                 item.Update(gameTime);

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using static ui.WindowUtil;
 
 namespace ui.Services.Overlay
 {
@@ -16,16 +17,15 @@ namespace ui.Services.Overlay
         Gadget HeadGadget;
         public void Load()
         {
-            int w = (int)(ReadHelper.Instance.Graphics.PreferredBackBufferWidth * 0.9);
-            int h = (int)(w * 0.4);
-            Rect = new Rectangle(Rect.X, Rect.Y, w, h);
+            setRect();
             gadgets.Add(HeadGadget = new HeadGadget());
         }
         public void Update(GameTime gametime)
         {
+            MouseState mouse = Mouse.GetState();
             foreach (Gadget gadget in gadgets)
             {
-                gadget.Update(gametime);
+                gadget.Update(gametime, mouse);
             }
         }
         public void Draw(SpriteBatch spriteBatch)
@@ -36,6 +36,14 @@ namespace ui.Services.Overlay
             }
 
 
+        }
+        void setRect()
+        {
+            int winWidth = ReadHelper.Instance.Graphics.PreferredBackBufferWidth;
+            int winHeight = ReadHelper.Instance.Graphics.PreferredBackBufferHeight;
+            int w = (int)(winWidth * 0.8);
+            int h = (int)(w * 0.4);
+            Rect = new Rectangle(winWidth / 2  - w / 2, winHeight / 2 - h / 2, w, h);
         }
     }
     public class Gadget
@@ -58,19 +66,19 @@ namespace ui.Services.Overlay
         public event EventHandler<ChangeEventArgs<bool>> OnMouseIn;
         public event EventHandler<ChangeEventArgs<bool>> OnMouseOut;
 
-        public virtual void Update(GameTime gametime)
+        public virtual void Update(GameTime gametime, MouseState mouse)
         {
-            MouseState mouse = Mouse.GetState();
+
             bool mouseInRect = rect.Contains(new Point(mouse.X, mouse.Y));
-            checkAndHandleEvent(ref mouseIn, mouseInRect, (evt) => OnMouseIn?.Invoke(this, evt));
-            checkAndHandleEvent(ref mouseOut, mouseInRect, (evt) => OnMouseOut?.Invoke(this, evt));
+            handleEvent(ref mouseIn, mouseInRect, (evt) => OnMouseIn?.Invoke(this, evt));
+            handleEvent(ref mouseOut, !mouseInRect, (evt) => OnMouseOut?.Invoke(this, evt));
 
             bool currentValue = mouseInRect && mouse.LeftButton == ButtonState.Pressed;
-            checkAndHandleEvent(ref leftMouseBtnPressed, currentValue, (evt) => OnLeftMouseBtnPress?.Invoke(this, evt));
+            handleEvent(ref leftMouseBtnPressed, currentValue, (evt) => OnLeftMouseBtnPress?.Invoke(this, evt));
             if (currentValue) readyForLeftClick = true;
 
             currentValue = mouseInRect && mouse.LeftButton == ButtonState.Released;
-            checkAndHandleEvent(ref leftMouseBtnReleased, currentValue, (evt) => OnLeftMouseBtnRelease?.Invoke(this, evt));
+            handleEvent(ref leftMouseBtnReleased, currentValue, (evt) => OnLeftMouseBtnRelease?.Invoke(this, evt));
             if (readyForLeftClick)
             {
                 readyForLeftClick = false;
@@ -78,11 +86,11 @@ namespace ui.Services.Overlay
             }
 
             currentValue = mouseInRect && mouse.RightButton == ButtonState.Pressed;
-            checkAndHandleEvent(ref rightMouseBtnPressed, currentValue, (evt) => OnRightMouseBtnPress?.Invoke(this, evt));
+            handleEvent(ref rightMouseBtnPressed, currentValue, (evt) => OnRightMouseBtnPress?.Invoke(this, evt));
             if (currentValue) readyForRightClick = true;
 
             currentValue = mouseInRect && mouse.RightButton == ButtonState.Released;
-            checkAndHandleEvent(ref rightMouseBtnReleased, currentValue, (evt) => OnRightMouseBtnRelease?.Invoke(this, evt));
+            handleEvent(ref rightMouseBtnReleased, currentValue, (evt) => OnRightMouseBtnRelease?.Invoke(this, evt));
             if (readyForRightClick)
             {
                 readyForRightClick = false;
@@ -91,26 +99,30 @@ namespace ui.Services.Overlay
 
         }
         public virtual void Draw(SpriteBatch spriteBatch) { }
-        void checkAndHandleEvent<T>(ref T previousValue, T currentValue, Action<ChangeEventArgs<T>> eventRef)
+        void handleEvent(ref bool previousValue, bool currentValue, Action<ChangeEventArgs<bool>> eventRef)
         {
             if (!Equals(previousValue, currentValue))
             {
+                bool _previousValue = previousValue;
                 previousValue = currentValue;
-                eventRef(new ChangeEventArgs<T>(currentValue, previousValue));
+                if (currentValue)
+                {
+                    eventRef(new ChangeEventArgs<bool>(currentValue, _previousValue));
+                }
             }
+
         }
-
-    }
-    public class ChangeEventArgs<T> : EventArgs
-    {
-        public T Prev { get; }
-        public T Current { get; }
-
-        public ChangeEventArgs(T current, T prev)
+        public class ChangeEventArgs<T> : EventArgs
         {
-            Prev = prev;
-            Current = current;
-        }
+            public T Prev { get; }
+            public T Current { get; }
 
+            public ChangeEventArgs(T current, T prev)
+            {
+                Prev = prev;
+                Current = current;
+            }
+
+        }
     }
 }
