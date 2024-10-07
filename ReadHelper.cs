@@ -1,27 +1,31 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using System;
-using System.Diagnostics;
-using System.Threading;
 using System.Windows.Forms;
+using ui.Services;
+using ui.Services.Overlay;
 using static ui.WindowUtil;
 
 namespace ui
 {
-    public class Game1 : Game
+    public class ReadHelper : Game
     {
+        public GraphicsDeviceManager Graphics => _graphics;
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
-        private Form _formWrapper;
-        SpriteFont font;
         public IntPtr FormHandle { get; private set; }
         public Form Form { get; private set; }
-        bool showForm = false;
-        bool dontHide = false;
+        private static readonly IService[] _services = new IService[] {
+            Overlay        = new Overlay()
+        };
+        public static readonly Overlay Overlay;
+        internal static ReadHelper Instance;
+        private System.Drawing.Point location_bak;
+        private bool drawStarted = false;
 
-        public Game1()
+        public ReadHelper()
         {
+            ReadHelper.Instance = this;
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
@@ -33,10 +37,10 @@ namespace ui
             FormHandle = this.Window.Handle;
             Form = Control.FromHandle(FormHandle).FindForm();
 
-
             Form.BackColor = System.Drawing.Color.Yellow;
             // Avoid the flash the window shows when the application launches (-32000x-32000 is where windows places minimized windows)
-            Form.Location = new System.Drawing.Point(100, 100);
+            location_bak = Form.Location;
+            Form.Location = new System.Drawing.Point(-30000, -30000);
             Window.IsBorderless = true;
 
             base.Initialize();
@@ -45,7 +49,10 @@ namespace ui
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            font = Content.Load<SpriteFont>("myfont");
+            foreach (var item in _services)
+            {
+                item.Load();
+            }
 
 
             // TODO: use this.Content to load your game content here
@@ -53,15 +60,11 @@ namespace ui
         protected override void BeginRun()
         {
             // 視窗大小
-            this._graphics.PreferredBackBufferWidth = 200;
-            this._graphics.PreferredBackBufferHeight = 200;
+            this._graphics.PreferredBackBufferWidth = 1000;
+            this._graphics.PreferredBackBufferHeight = 500;
             this._graphics.ApplyChanges();
 
          
-            //// 修改視窗樣式 (關鍵)
-            //SetWindowLong(FormHandle, GWL_STYLE, CS_HREDRAW | CS_VREDRAW);
-            //// 視窗透明度(沒差)
-            //SetLayeredWindowAttributes(FormHandle, 0, 0, 2);
             base.BeginRun();
 
         }
@@ -72,30 +75,15 @@ namespace ui
             {
                 cxLeftWidth = 0,
                 cyTopHeight = 0,
-                cxRightWidth = 100,
-                cyBottomHeight = 100
+                cxRightWidth = this._graphics.PreferredBackBufferWidth,
+                cyBottomHeight = this._graphics.PreferredBackBufferHeight
             };
             // 無邊框
             DwmExtendFrameIntoClientArea(FormHandle, ref marg);
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == Microsoft.Xna.Framework.Input.ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Microsoft.Xna.Framework.Input.Keys.P))
+            foreach (var item in _services)
             {
-                // 修改視窗樣式 (關鍵)
-                SetWindowLong(FormHandle, GWL_STYLE, CS_HREDRAW | CS_VREDRAW);
-                // 視窗透明度(沒差)
-                SetLayeredWindowAttributes(FormHandle, 0, 0, 2);
-
+                item.Update(gameTime);
             }
-            // TODO: Add your update logic here
-
-
-            //{
-
-
-            //    //當窗口的水平垂直尺寸改變時，整個窗口區域都會被重新繪製
-            //    WindowUtil.SetWindowLong(FormHandle, WindowUtil.GWL_STYLE, WindowUtil.CS_HREDRAW | WindowUtil.CS_VREDRAW);
-            //    //WindowUtil.SetLayeredWindowAttributes(FormHandle, 0, 255, 2);
-            //}
-
             base.Update(gameTime);
         }
 
@@ -103,11 +91,16 @@ namespace ui
         {
             GraphicsDevice.Clear(Color.Transparent);
             _spriteBatch.Begin();
-            _spriteBatch.DrawString(font, "FPS: 123", new Vector2(Window.ClientBounds.Width / 2, 25), Color.Red);
-
+            foreach (var item in _services)
+            {
+                item.Draw(_spriteBatch);
+            }
             _spriteBatch.End();
-            // TODO: Add your drawing code here
-
+            if(!drawStarted)
+            {
+                Form.Location = location_bak;
+                drawStarted = true;
+            }
             base.Draw(gameTime);
         }
     }

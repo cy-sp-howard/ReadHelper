@@ -1,3 +1,3 @@
 ﻿
-using var game = new ui.Game1();
+using var game = new ui.ReadHelper();
 game.Run();

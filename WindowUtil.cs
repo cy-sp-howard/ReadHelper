@@ -38,17 +38,9 @@ namespace ui
 
         public const int MINIMIZED_POS = -32000;
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern bool ClientToScreen(IntPtr hWnd, ref System.Drawing.Point lpPoint);
 
         [DllImport("Dwmapi.dll")]
         public static extern int DwmExtendFrameIntoClientArea(IntPtr hWnd, ref Margins pMarInset);
-
-        [DllImport("user32.dll")]
-        public static extern IntPtr GetActiveWindow();
-
-        [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        public static extern long GetClassName(IntPtr hwnd, StringBuilder lpClassName, long nMaxCount);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern bool GetClientRect(IntPtr hWnd, ref RECT lpRect);
@@ -97,26 +89,8 @@ namespace ui
             public int cyBottomHeight;
         }
 
-        public enum GW : uint
-        {
-            HWNDFIRST = 0,
-            HWNDLAST = 1,
-            HWNDNEXT = 2,
-            HWNDPREV = 3,
-            OWNER = 4,
-            CHILD = 5,
-            ENABLEDPOPUP = 6
-        }
-
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern IntPtr GetWindow(IntPtr hWnd, GW uCmd);
-
-        internal static void SetForegroundWindowEx(IntPtr handle) => SetForegroundWindow(handle);
-
         public static IntPtr GetWindowLong(IntPtr hWnd, int nIndex) => IntPtr.Size == 8 ? GetWindowLongPtr64(hWnd, nIndex) : GetWindowLongPtr32(hWnd, nIndex);
-
         public static int SetWindowLong(IntPtr hWnd, int nIndex, uint dwNewLong) => IntPtr.Size != 8 ? SetWindowLong32(hWnd, nIndex, dwNewLong) : (int)SetWindowLongPtr64(hWnd, nIndex, new UIntPtr(dwNewLong));
-
         public static void SetWindowParam(IntPtr winHandle, bool showInTaskbar = false)
         {
             uint windowParam = WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT | WS_EX_LAYERED;
@@ -138,32 +112,5 @@ namespace ui
                 ShowWindow(winHandle, SW_SHOW);
             }
         }
-
-        internal static void SetShowInTaskbar(IntPtr winHandle, bool showInTaskbar)
-        {
-            SetWindowParam(winHandle, showInTaskbar);
-        }
-
-        internal static void SetupOverlay(IntPtr winHandle)
-        {
-            SetWindowLong(winHandle, GWL_STYLE, CS_HREDRAW | CS_VREDRAW);
-
-            // Let Gw2InstanceIntegration sync behavior with game runtime
-            SetShowInTaskbar(winHandle, false);
-
-            SetLayeredWindowAttributes(winHandle, 0, 255, 2);
-        }
-
-        public enum OverlayUpdateResponse
-        {
-            WithFocus,
-            WithoutFocus,
-            Minimized,
-            Errored
-        }
-
-        public static Rectangle pos;
-
-
     }
 }
