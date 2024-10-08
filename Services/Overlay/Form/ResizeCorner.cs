@@ -9,15 +9,16 @@ using Microsoft.Xna.Framework.Input;
 
 namespace ui.Services.Overlay.Form
 {
-    public class FormHead : Gadget
+    public class ResizeCorner : Gadget
     {
-        Color color = new Color(10, 10, 10, 0);
-        Point mouseMoveStartPos = new Point(-1, -1);
-        Point formMoveStartPos = new Point(-1, -1);
-        public bool Moving = false;
-        public int Height = 30;
-        public FormHead()
+
+        Color color = Color.Transparent;
+        Point resizeStartPos = new Point(-1, -1);
+        Point resizeStartSize = new Point(-1, -1);
+        public bool Resizing = false;
+        public ResizeCorner()
         {
+            Rect = new Rectangle(0, 0, 20, 20);
             OnMouseIn += mouseInHandler;
             OnMouseOut += mouseOutHandlerr;
             OnLeftMouseBtnPress += mousePressHandler;
@@ -29,42 +30,42 @@ namespace ui.Services.Overlay.Form
         }
         void mouseOutHandlerr(object sender, InputEventArgs e)
         {
-            color = new Color(10, 10, 10, 0);
+            color = Color.Transparent;
         }
         void mousePressHandler(object sender, InputEventArgs e)
         {
-            Moving = true;
+            Resizing = true;
         }
         void mouseReleaseHandler(object sender, InputEventArgs e)
         {
-            Moving = false;
-            mouseMoveStartPos = new Point(-1, -1);
+            Resizing = false;
+            resizeStartPos = new Point(-1, -1);
         }
         void mouseMoveHandler(MouseState mouse)
         {
-            if (!Moving) return;
-            if (mouseMoveStartPos.X < 0)
+            if (!Resizing) return;
+            if (resizeStartPos.X < 0)
             {
-                mouseMoveStartPos = mouse.Position;
-                formMoveStartPos = new Point(Parent.Rect.X, Parent.Rect.Y);
+                resizeStartPos = mouse.Position;
+                resizeStartSize = new Point(Parent.Rect.Width, Parent.Rect.Height);
             }
-            int moveX = mouse.Position.X - mouseMoveStartPos.X;
-            int moveY = mouse.Position.Y - mouseMoveStartPos.Y;
-            Parent.Rect = new Rectangle(formMoveStartPos.X + moveX, formMoveStartPos.Y + moveY, Parent.Rect.Width, Parent.Rect.Height);
+            int moveX = mouse.Position.X - resizeStartPos.X;
+            int moveY = mouse.Position.Y - resizeStartPos.Y;
+            Parent.Rect = new Rectangle(Parent.Rect.X, Parent.Rect.Y, resizeStartSize.X + moveX, resizeStartSize.Y + moveY);
         }
-        void checkMovingForm()
+        void checkResizingForm()
         {
             if (MouseIn) return;
             foreach (var form in VirtualForm.AllForms)
             {
-                if (Equals(form, Parent) || !form.Moving) continue;
-                Moving = false;
+                if (Equals(form, Parent) || !form.Resizing) continue;
+                Resizing = false;
             }
         }
         public override void Update(GameTime gametime, MouseState mouse)
         {
-            Rect = new Rectangle(Parent.Rect.X, Parent.Rect.Y, Parent.Rect.Width, Height);
-            checkMovingForm();
+            RelativePosition = new Point(Parent.Rect.Width - Rect.Width, Parent.Rect.Height - Rect.Height);
+            checkResizingForm();
             mouseMoveHandler(mouse);
 
             base.Update(gametime, mouse);
@@ -73,7 +74,5 @@ namespace ui.Services.Overlay.Form
         {
             spriteBatch.Draw(ReadHelper.PixelTexture, Rect, color);
         }
-
-
     }
 }

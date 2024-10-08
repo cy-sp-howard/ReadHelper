@@ -17,7 +17,7 @@ namespace ui.Services.Overlay
         public void Load()
         {
             setRect();
-            new VirtualForm() { Parent = this, Rect = new Rectangle(20, 0, 500, 200), ZIndex = 1 };
+            new VirtualForm() { Parent = this, Rect = new Rectangle(20, 0, 500, 200), ZIndex = 1, Resizeable = true };
             new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 50, 50), ZIndex = 0 };
         }
         public void Update(GameTime gametime)
@@ -58,6 +58,7 @@ namespace ui.Services.Overlay
             }
         }
         public int ZIndex = 0;
+        public bool Disabled = false;
         public Gadget Parent
         {
             get => parent;
@@ -95,6 +96,7 @@ namespace ui.Services.Overlay
 
         public virtual void Update(GameTime gametime, MouseState mouse)
         {
+            if (Disabled) return;
 
             bool mouseInRect = Rect.Contains(new Point(mouse.X, mouse.Y));
             mouseInChild = false;
@@ -131,7 +133,7 @@ namespace ui.Services.Overlay
                 if (readyForLeftClick && currentValue)
                 {
                     readyForLeftClick = false;
-                    OnLeftMouseBtnClick?.Invoke(this, new InputEventArgs(this));
+                    OnLeftMouseBtnClick?.Invoke(this, new InputEventArgs());
                 }
 
                 currentValue = mouse.RightButton == ButtonState.Pressed;
@@ -149,7 +151,7 @@ namespace ui.Services.Overlay
                 if (readyForRightClick && currentValue)
                 {
                     readyForRightClick = false;
-                    OnRightMouseBtnClick?.Invoke(this, new InputEventArgs(this));
+                    OnRightMouseBtnClick?.Invoke(this, new InputEventArgs());
                 }
             }
 
@@ -160,12 +162,13 @@ namespace ui.Services.Overlay
         }
         public virtual void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Overlay overlay)
         {
+            if (Disabled) return;
             foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
             {
                 child.Draw(spriteBatch, graphicsDevice, overlay);
             }
         }
-        void handleEvent(ref bool previousValue, bool currentValue, Action<InputEventArgs> eventRef)
+        static void handleEvent(ref bool previousValue, bool currentValue, Action<InputEventArgs> eventRef)
         {
             if (!Equals(previousValue, currentValue))
             {
@@ -173,16 +176,14 @@ namespace ui.Services.Overlay
                 previousValue = currentValue;
                 if (currentValue)
                 {
-                    eventRef(new InputEventArgs(this));
+                    eventRef(new InputEventArgs());
                 }
             }
         }
         public class InputEventArgs : EventArgs
         {
-            public Gadget gadget;
-            public InputEventArgs(Gadget gadget)
+            public InputEventArgs()
             {
-                this.gadget = gadget;
             }
         }
     }
