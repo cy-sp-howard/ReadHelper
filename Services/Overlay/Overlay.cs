@@ -17,7 +17,7 @@ namespace ui.Services.Overlay
         public void Load()
         {
             setRect();
-            new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 500, 200), ZIndex = 1 };
+            new VirtualForm() { Parent = this, Rect = new Rectangle(20, 0, 500, 200), ZIndex = 1 };
             new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 50, 50), ZIndex = 0 };
         }
         public void Update(GameTime gametime)
@@ -87,14 +87,21 @@ namespace ui.Services.Overlay
         public event EventHandler<InputEventArgs> OnLeftMouseBtnClick;
         public event EventHandler<InputEventArgs> OnRightMouseBtnClick;
         private bool mouseIn = false;
+        private bool mouseInChild = false;
         private bool mouseOut = false;
         public event EventHandler<InputEventArgs> OnMouseIn;
         public event EventHandler<InputEventArgs> OnMouseOut;
 
         public virtual void Update(GameTime gametime, MouseState mouse)
         {
-         
+
             bool mouseInRect = Rect.Contains(new Point(mouse.X, mouse.Y));
+            if(Parent != null)
+            {
+                if (Parent.mouseInChild) mouseInRect = false;
+                else if (mouseInRect) Parent.mouseInChild = true;
+            }
+
             handleEvent(ref mouseIn, mouseInRect, (evt) =>
             {
                 OnMouseIn?.Invoke(this, evt);
@@ -104,43 +111,46 @@ namespace ui.Services.Overlay
             {
                 OnMouseOut?.Invoke(this, evt);
             });
+            if (mouseInRect)
+            {
+                bool currentValue = mouse.LeftButton == ButtonState.Pressed;
+                handleEvent(ref leftMouseBtnPressed, currentValue, (evt) =>
+                {
+                    OnLeftMouseBtnPress?.Invoke(this, evt);
+                });
+                if (currentValue) readyForLeftClick = true;
 
-            bool currentValue = mouseInRect && mouse.LeftButton == ButtonState.Pressed;
-            handleEvent(ref leftMouseBtnPressed, currentValue, (evt) =>
-            {
-                OnLeftMouseBtnPress?.Invoke(this, evt);
-            });
-            if (currentValue) readyForLeftClick = true;
+                currentValue = mouse.LeftButton == ButtonState.Released;
+                handleEvent(ref leftMouseBtnReleased, currentValue, (evt) =>
+                {
+                    OnLeftMouseBtnRelease?.Invoke(this, evt);
+                });
+                if (readyForLeftClick && currentValue)
+                {
+                    readyForLeftClick = false;
+                    OnLeftMouseBtnClick?.Invoke(this, new InputEventArgs(this));
+                }
 
-            currentValue = mouseInRect && mouse.LeftButton == ButtonState.Released;
-            handleEvent(ref leftMouseBtnReleased, currentValue, (evt) =>
-            {
-                OnLeftMouseBtnRelease?.Invoke(this, evt);
-            });
-            if (readyForLeftClick && currentValue)
-            {
-                readyForLeftClick = false;
-                OnLeftMouseBtnClick?.Invoke(this, new InputEventArgs(this));
+                currentValue = mouse.RightButton == ButtonState.Pressed;
+                handleEvent(ref rightMouseBtnPressed, currentValue, (evt) =>
+                {
+                    OnRightMouseBtnPress?.Invoke(this, evt);
+                });
+                if (currentValue) readyForRightClick = true;
+
+                currentValue = mouse.RightButton == ButtonState.Released;
+                handleEvent(ref rightMouseBtnReleased, currentValue, (evt) =>
+                {
+                    OnRightMouseBtnRelease?.Invoke(this, evt);
+                });
+                if (readyForRightClick && currentValue)
+                {
+                    readyForRightClick = false;
+                    OnRightMouseBtnClick?.Invoke(this, new InputEventArgs(this));
+                }
             }
 
-            currentValue = mouseInRect && mouse.RightButton == ButtonState.Pressed;
-            handleEvent(ref rightMouseBtnPressed, currentValue, (evt) =>
-            {
-                OnRightMouseBtnPress?.Invoke(this, evt);
-            });
-            if (currentValue) readyForRightClick = true;
-
-            currentValue = mouseInRect && mouse.RightButton == ButtonState.Released;
-            handleEvent(ref rightMouseBtnReleased, currentValue, (evt) =>
-            {
-                OnRightMouseBtnRelease?.Invoke(this, evt);
-            });
-            if (readyForRightClick && currentValue)
-            {
-                readyForRightClick = false;
-                OnRightMouseBtnClick?.Invoke(this, new InputEventArgs(this));
-            }
-
+            mouseInChild = false;
             foreach (var child in Children.ToList().OrderByDescending(c => c.ZIndex))
             {
                 child.Update(gametime, mouse);
