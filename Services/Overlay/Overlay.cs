@@ -91,6 +91,7 @@ namespace ui.Services.Overlay
         private bool mouseOut = false;
         public event EventHandler<InputEventArgs> OnMouseIn;
         public event EventHandler<InputEventArgs> OnMouseOut;
+        public bool MouseIn => mouseIn;
 
         public virtual void Update(GameTime gametime, MouseState mouse)
         {

@@ -15,11 +15,10 @@ namespace ui.Services.Overlay.Form
         Color color = new Color(10, 10, 10, 0);
         Point mouseMoveStartPos = new Point(-1, -1);
         Point formMoveStartPos = new Point(-1, -1);
-        bool moving = false;
+        public bool Moving = false;
         public int Height = 30;
         public FormHead()
         {
-   
             OnMouseIn += mouseInHandler;
             OnMouseOut += mouseOutHandlerr;
             OnLeftMouseBtnPress += mousePressHandler;
@@ -32,20 +31,19 @@ namespace ui.Services.Overlay.Form
         void mouseOutHandlerr(object sender, InputEventArgs e)
         {
             color = new Color(10, 10, 10, 0);
-            moving = false;
         }
         void mousePressHandler(object sender, InputEventArgs e)
         {
-            moving = true;
+            Moving = true;
         }
         void mouseReleaseHandler(object sender, InputEventArgs e)
         {
-            moving = false;
+            Moving = false;
             mouseMoveStartPos = new Point(-1, -1);
         }
         void mouseMoveHandler(MouseState mouse)
         {
-            if (!moving) return;
+            if (!Moving) return;
             if (mouseMoveStartPos.X < 0)
             {
                 mouseMoveStartPos = mouse.Position;
@@ -55,10 +53,21 @@ namespace ui.Services.Overlay.Form
             int moveY = mouse.Position.Y - mouseMoveStartPos.Y;
             Parent.Rect = new Rectangle(formMoveStartPos.X + moveX, formMoveStartPos.Y + moveY, Parent.Rect.Width, Parent.Rect.Height);
         }
+        void checkMovingForm()
+        {
+            if (MouseIn) return;
+            foreach (var form in VirtualForm.AllForms)
+            {
+                if (Equals(form, Parent) || !form.Moving) continue;
+                Moving = false;
+            }
+        }
         public override void Update(GameTime gametime, MouseState mouse)
         {
             Rect = new Rectangle(Parent.Rect.X, Parent.Rect.Y, Parent.Rect.Width, Height);
+            checkMovingForm();
             mouseMoveHandler(mouse);
+
             base.Update(gametime, mouse);
         }
         public override void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Overlay overlay)
