@@ -96,8 +96,10 @@ namespace ui.Services.Overlay
         {
 
             bool mouseInRect = Rect.Contains(new Point(mouse.X, mouse.Y));
-            if(Parent != null)
+            mouseInChild = false;
+            if (Parent != null)
             {
+                mouseInChild = Parent.mouseInChild;
                 if (Parent.mouseInChild) mouseInRect = false;
                 else if (mouseInRect) Parent.mouseInChild = true;
             }
@@ -150,7 +152,6 @@ namespace ui.Services.Overlay
                 }
             }
 
-            mouseInChild = false;
             foreach (var child in Children.ToList().OrderByDescending(c => c.ZIndex))
             {
                 child.Update(gametime, mouse);

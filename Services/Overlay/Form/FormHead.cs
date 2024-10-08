@@ -32,6 +32,7 @@ namespace ui.Services.Overlay.Form
         void mouseOutHandlerr(object sender, InputEventArgs e)
         {
             color = new Color(10, 10, 10, 0);
+            moving = false;
         }
         void mousePressHandler(object sender, InputEventArgs e)
         {
