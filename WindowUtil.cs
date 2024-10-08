@@ -12,8 +12,6 @@ namespace ui
 
     internal static class WindowUtil
     {
-
-
         public const uint WS_EX_TOPMOST = 0x00000008;
         public const uint WS_EX_TRANSPARENT = 0x00000020;
         public const uint WS_EX_TOOLWINDOW = 0x00000080;
@@ -38,7 +36,9 @@ namespace ui
 
         public const int MINIMIZED_POS = -32000;
 
-
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool ClientToScreen(IntPtr hWnd, ref System.Drawing.Point lpPoint);
+        
         [DllImport("Dwmapi.dll")]
         public static extern int DwmExtendFrameIntoClientArea(IntPtr hWnd, ref Margins pMarInset);
 

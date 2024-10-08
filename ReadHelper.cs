@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using SharpDX.Direct3D9;
 using System;
+using System.Threading;
 using System.Windows.Forms;
 using ui.Services;
 using ui.Services.Overlay;
@@ -20,6 +22,7 @@ namespace ui
         };
         public static readonly Overlay Overlay;
         internal static ReadHelper Instance;
+        static public Texture2D PixelTexture;
         private System.Drawing.Point location_bak;
         private bool drawStarted = false;
 
@@ -43,6 +46,8 @@ namespace ui
             Form.Location = new System.Drawing.Point(-30000, -30000);
             Window.IsBorderless = true;
 
+            SetWindowLong(FormHandle, GWL_EXSTYLE, WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_LAYERED);
+            SetLayeredWindowAttributes(FormHandle, 0, 255, 2);
 
             Graphics.PreferredBackBufferWidth = 1000;
             Graphics.PreferredBackBufferHeight = 500;
@@ -53,14 +58,14 @@ namespace ui
 
         protected override void LoadContent()
         {
+            PixelTexture = new Texture2D(GraphicsDevice, 1, 1);
+            PixelTexture.SetData(new[] { Color.White });
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             foreach (var item in _services)
             {
                 item.Load();
             }
 
-
-            // TODO: use this.Content to load your game content here
         }
         protected override void BeginRun()
         {
@@ -79,6 +84,10 @@ namespace ui
             };
             // 無邊框
             //DwmExtendFrameIntoClientArea(FormHandle, ref marg);
+            var screenPoint = System.Drawing.Point.Empty;
+            ClientToScreen(FormHandle, ref screenPoint);
+            SetWindowPos(FormHandle, HWND_TOPMOST, screenPoint.X, screenPoint.Y, marg.cxRightWidth, marg.cyBottomHeight, 0);
+
             foreach (var item in _services)
             {
                 item.Update(gameTime);
@@ -92,7 +101,7 @@ namespace ui
             _spriteBatch.Begin();
             foreach (var item in _services)
             {
-                item.Draw(_spriteBatch);
+                item.Draw(_spriteBatch, GraphicsDevice);
             }
             _spriteBatch.End();
             if(!drawStarted)

@@ -6,100 +6,154 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using ui.Services.Overlay.Form;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using static ui.WindowUtil;
 
 namespace ui.Services.Overlay
 {
-    public class Overlay : IService
+    public class Overlay : Gadget, IService
     {
-        List<Gadget> gadgets = new List<Gadget>();
-        public Rectangle Rect = new Rectangle(0, 0, 0, 0);
-        Gadget HeadGadget;
         public void Load()
         {
             setRect();
-            gadgets.Add(HeadGadget = new HeadGadget());
+            new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 500, 200), ZIndex = 1 };
+            new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 50, 50), ZIndex = 0 };
         }
         public void Update(GameTime gametime)
         {
             MouseState mouse = Mouse.GetState();
-            foreach (Gadget gadget in gadgets)
-            {
-                gadget.Update(gametime, mouse);
-            }
+            base.Update(gametime, mouse);
         }
-        public void Draw(SpriteBatch spriteBatch)
+        public void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
-            foreach (Gadget gadget in gadgets)
-            {
-                gadget.Draw(spriteBatch);
-            }
-
-
+            base.Draw(spriteBatch, graphicsDevice, this);
         }
         void setRect()
         {
             int winWidth = ReadHelper.Instance.Graphics.PreferredBackBufferWidth;
             int winHeight = ReadHelper.Instance.Graphics.PreferredBackBufferHeight;
-            int w = (int)(winWidth * 0.8);
-            int h = (int)(w * 0.4);
-            Rect = new Rectangle(winWidth / 2  - w / 2, winHeight / 2 - h / 2, w, h);
+            Rect = new Rectangle(0, 0, winWidth, winHeight);
         }
+
     }
     public class Gadget
     {
-        protected Rectangle rect = new Rectangle(0, 0, 0, 0);
+        public Rectangle Rect = new Rectangle(0, 0, 0, 0);
+        public Point RelativePosition
+        {
+            get
+            {
+                if (parent == null) return new Point(Rect.X, Rect.Y);
+                return new Point(Rect.X - parent.Rect.X, Rect.Y - parent.Rect.Y);
+            }
+            set
+            {
+                if (parent == null)
+                {
+                    new Rectangle(value.X, value.Y, Rect.Width, Rect.Height);
+                    return;
+                };
+                Rect = new Rectangle(value.X + parent.Rect.X, value.Y + parent.Rect.Y, Rect.Width, Rect.Height);
+            }
+        }
+        public int ZIndex = 0;
+        public Gadget Parent
+        {
+            get => parent;
+            set
+            {
+                if (parent != null) parent.Children.Remove(this);
+                parent = value;
+                if (parent != null)
+                {
+                    parent.Children.Add(this);
+                };
+            }
+        }
+        private Gadget parent = null;
+        // only set by Parent set except Overlay
+        public readonly HashSet<Gadget> Children = new HashSet<Gadget>();
         private bool leftMouseBtnPressed = false;
         private bool rightMouseBtnPressed = false;
         private bool leftMouseBtnReleased = false;
         private bool rightMouseBtnReleased = false;
-        public event EventHandler<ChangeEventArgs<bool>> OnLeftMouseBtnPress;
-        public event EventHandler<ChangeEventArgs<bool>> OnRightMouseBtnPress;
-        public event EventHandler<ChangeEventArgs<bool>> OnLeftMouseBtnRelease;
-        public event EventHandler<ChangeEventArgs<bool>> OnRightMouseBtnRelease;
+        public event EventHandler<InputEventArgs> OnLeftMouseBtnPress;
+        public event EventHandler<InputEventArgs> OnRightMouseBtnPress;
+        public event EventHandler<InputEventArgs> OnLeftMouseBtnRelease;
+        public event EventHandler<InputEventArgs> OnRightMouseBtnRelease;
         private bool readyForLeftClick = false;
         private bool readyForRightClick = false;
-        public event EventHandler<ChangeEventArgs<bool>> OnLeftMouseBtnClick;
-        public event EventHandler<ChangeEventArgs<bool>> OnRightMouseBtnClick;
+        public event EventHandler<InputEventArgs> OnLeftMouseBtnClick;
+        public event EventHandler<InputEventArgs> OnRightMouseBtnClick;
         private bool mouseIn = false;
         private bool mouseOut = false;
-        public event EventHandler<ChangeEventArgs<bool>> OnMouseIn;
-        public event EventHandler<ChangeEventArgs<bool>> OnMouseOut;
+        public event EventHandler<InputEventArgs> OnMouseIn;
+        public event EventHandler<InputEventArgs> OnMouseOut;
 
         public virtual void Update(GameTime gametime, MouseState mouse)
         {
+         
+            bool mouseInRect = Rect.Contains(new Point(mouse.X, mouse.Y));
+            handleEvent(ref mouseIn, mouseInRect, (evt) =>
+            {
+                OnMouseIn?.Invoke(this, evt);
+            });
 
-            bool mouseInRect = rect.Contains(new Point(mouse.X, mouse.Y));
-            handleEvent(ref mouseIn, mouseInRect, (evt) => OnMouseIn?.Invoke(this, evt));
-            handleEvent(ref mouseOut, !mouseInRect, (evt) => OnMouseOut?.Invoke(this, evt));
+            handleEvent(ref mouseOut, !mouseInRect, (evt) =>
+            {
+                OnMouseOut?.Invoke(this, evt);
+            });
 
             bool currentValue = mouseInRect && mouse.LeftButton == ButtonState.Pressed;
-            handleEvent(ref leftMouseBtnPressed, currentValue, (evt) => OnLeftMouseBtnPress?.Invoke(this, evt));
+            handleEvent(ref leftMouseBtnPressed, currentValue, (evt) =>
+            {
+                OnLeftMouseBtnPress?.Invoke(this, evt);
+            });
             if (currentValue) readyForLeftClick = true;
 
             currentValue = mouseInRect && mouse.LeftButton == ButtonState.Released;
-            handleEvent(ref leftMouseBtnReleased, currentValue, (evt) => OnLeftMouseBtnRelease?.Invoke(this, evt));
-            if (readyForLeftClick)
+            handleEvent(ref leftMouseBtnReleased, currentValue, (evt) =>
+            {
+                OnLeftMouseBtnRelease?.Invoke(this, evt);
+            });
+            if (readyForLeftClick && currentValue)
             {
                 readyForLeftClick = false;
-                OnLeftMouseBtnClick?.Invoke(this, new ChangeEventArgs<bool>(true, false));
+                OnLeftMouseBtnClick?.Invoke(this, new InputEventArgs(this));
             }
 
             currentValue = mouseInRect && mouse.RightButton == ButtonState.Pressed;
-            handleEvent(ref rightMouseBtnPressed, currentValue, (evt) => OnRightMouseBtnPress?.Invoke(this, evt));
+            handleEvent(ref rightMouseBtnPressed, currentValue, (evt) =>
+            {
+                OnRightMouseBtnPress?.Invoke(this, evt);
+            });
             if (currentValue) readyForRightClick = true;
 
             currentValue = mouseInRect && mouse.RightButton == ButtonState.Released;
-            handleEvent(ref rightMouseBtnReleased, currentValue, (evt) => OnRightMouseBtnRelease?.Invoke(this, evt));
-            if (readyForRightClick)
+            handleEvent(ref rightMouseBtnReleased, currentValue, (evt) =>
+            {
+                OnRightMouseBtnRelease?.Invoke(this, evt);
+            });
+            if (readyForRightClick && currentValue)
             {
                 readyForRightClick = false;
-                OnRightMouseBtnClick?.Invoke(this, new ChangeEventArgs<bool>(true, false));
+                OnRightMouseBtnClick?.Invoke(this, new InputEventArgs(this));
             }
 
+            foreach (var child in Children.ToList().OrderByDescending(c => c.ZIndex))
+            {
+                child.Update(gametime, mouse);
+            }
         }
-        public virtual void Draw(SpriteBatch spriteBatch) { }
-        void handleEvent(ref bool previousValue, bool currentValue, Action<ChangeEventArgs<bool>> eventRef)
+        public virtual void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Overlay overlay)
+        {
+            foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
+            {
+                child.Draw(spriteBatch, graphicsDevice, overlay);
+            }
+        }
+        void handleEvent(ref bool previousValue, bool currentValue, Action<InputEventArgs> eventRef)
         {
             if (!Equals(previousValue, currentValue))
             {
@@ -107,22 +161,17 @@ namespace ui.Services.Overlay
                 previousValue = currentValue;
                 if (currentValue)
                 {
-                    eventRef(new ChangeEventArgs<bool>(currentValue, _previousValue));
+                    eventRef(new InputEventArgs(this));
                 }
             }
-
         }
-        public class ChangeEventArgs<T> : EventArgs
+        public class InputEventArgs : EventArgs
         {
-            public T Prev { get; }
-            public T Current { get; }
-
-            public ChangeEventArgs(T current, T prev)
+            public Gadget gadget;
+            public InputEventArgs(Gadget gadget)
             {
-                Prev = prev;
-                Current = current;
+                this.gadget = gadget;
             }
-
         }
     }
 }

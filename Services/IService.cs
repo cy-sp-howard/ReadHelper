@@ -12,6 +12,6 @@ namespace ui.Services
     {
         void Load();
         void Update(GameTime gametime);
-        void Draw(SpriteBatch spriteBatch);
+        void Draw(SpriteBatch spriteBatch,GraphicsDevice graphicsDevice);
     }
 }
