@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 using Microsoft.Xna.Framework;
+using SharpDX.Win32;
 
 // ReSharper disable FieldCanBeMadeReadOnly.Local
 // ReSharper disable InconsistentNaming
@@ -111,6 +112,87 @@ namespace ui
             {
                 ShowWindow(winHandle, SW_SHOW);
             }
+        }
+        public enum HookType
+        {
+            WH_KEYBOARD_LL = 13,
+            WH_MOUSE_LL = 14
+        }
+        public delegate int HookCallbackDelegate(int nCode, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr SetWindowsHookEx(HookType idHook, HookCallbackDelegate lpfn, IntPtr hMod, uint dwThreadId);
+
+        [DllImport("user32.dll")]
+        public static extern int CallNextHookEx(HookType idHook, int nCode, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool UnhookWindowsHookEx(IntPtr hook);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern IntPtr GetModuleHandleW(IntPtr fakezero);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MouseLLHookStruct
+        {
+
+            public Point Point { get; }
+            public int MouseData { get; }
+            public int Flags { get; }
+            public int Time { get; }
+            public IntPtr Extra { get; }
+
+        }
+        public enum MouseEventType
+        {
+
+            /// <summary>
+            /// Occurs when the mouse has moved.
+            /// </summary>
+            MouseMoved = 512,
+
+            /// <summary>
+            /// Occurs when the left-mouse button is pressed.
+            /// </summary>
+            LeftMouseButtonPressed = 513,
+
+            /// <summary>
+            /// Occurs when the left-mouse button is released.
+            /// </summary>
+            LeftMouseButtonReleased = 514,
+
+            /// <summary>
+            /// Occurs when the right-mouse button is pressed.
+            /// </summary>
+            RightMouseButtonPressed = 516,
+
+            /// <summary>
+            /// Occurs when the right-mouse button is released.
+            /// </summary>
+            RightMouseButtonReleased = 517,
+
+            /// <summary>
+            /// Occurs when the mouse-wheel is scrolled.
+            /// </summary>
+            MouseWheelScrolled = 522,
+
+            /// <summary>
+            /// Occurs when the mouse enters the bounds of the control.
+            /// </summary>
+            /// <remarks>
+            /// Exclusive to mouse events on <see cref="Controls"/>.
+            /// </remarks>
+            MouseEntered,
+
+            /// <summary>
+            /// Occurs when the mouse leaves the bounds of the control.
+            /// </summary>
+            /// <remarks>
+            /// Exclusive to mouse events on <see cref="Controls"/>.
+            /// </remarks>
+            MouseLeft
+
         }
     }
 }

@@ -12,25 +12,33 @@ namespace ui.Services.Overlay.Form
     public class ResizeCorner : Gadget
     {
 
-        Color color = Color.Transparent;
         Point resizeStartPos = new Point(-1, -1);
         Point resizeStartSize = new Point(-1, -1);
+        VertexPositionColor[] cornerVertexs = new VertexPositionColor[3];
+        Color color = Color.Blue;
+        static BasicEffect effect;
+        static VertexBuffer vertexBuffer;
         public bool Resizing = false;
-        public ResizeCorner()
+        static ResizeCorner()
         {
-            Rect = new Rectangle(0, 0, 20, 20);
-            OnMouseIn += mouseInHandler;
-            OnMouseOut += mouseOutHandlerr;
-            OnLeftMouseBtnPress += mousePressHandler;
-            OnLeftMouseBtnRelease += mouseReleaseHandler;
+            effect = new BasicEffect(ReadHelper.Instance.GraphicsDevice);
+            effect.VertexColorEnabled = true;
+           vertexBuffer = new VertexBuffer(ReadHelper.Instance.GraphicsDevice, VertexPositionColor.VertexDeclaration, 3, BufferUsage.WriteOnly);
+        }
+        void setVertexs()
+        {
+            cornerVertexs[0] = new VertexPositionColor(new Vector3(Rect.X, 0, 0), color);
+            cornerVertexs[1] = new VertexPositionColor(new Vector3(Rect.X, 1, 0), color);
+            cornerVertexs[2] = new VertexPositionColor(new Vector3(0, Rect.Height, 0), color);
+            vertexBuffer.SetData(cornerVertexs);
         }
         void mouseInHandler(object sender, InputEventArgs e)
         {
             color = new Color(30, 30, 30, 0);
         }
-        void mouseOutHandlerr(object sender, InputEventArgs e)
+        void mouseOutHandler(object sender, InputEventArgs e)
         {
-            color = Color.Transparent;
+            color = Color.Blue;
         }
         void mousePressHandler(object sender, InputEventArgs e)
         {
@@ -49,9 +57,11 @@ namespace ui.Services.Overlay.Form
                 resizeStartPos = mouse.Position;
                 resizeStartSize = new Point(Parent.Rect.Width, Parent.Rect.Height);
             }
-            int moveX = mouse.Position.X - resizeStartPos.X;
-            int moveY = mouse.Position.Y - resizeStartPos.Y;
-            Parent.Rect = new Rectangle(Parent.Rect.X, Parent.Rect.Y, resizeStartSize.X + moveX, resizeStartSize.Y + moveY);
+            int width = mouse.Position.X - resizeStartPos.X + resizeStartSize.X;
+            int height = mouse.Position.Y - resizeStartPos.Y + resizeStartSize.Y;
+            if (width <= 100) width = 100;
+            if (height <= 100) height = 100;
+            Parent.Rect = new Rectangle(Parent.Rect.X, Parent.Rect.Y, width, height);
         }
         void checkResizingForm()
         {
@@ -61,6 +71,15 @@ namespace ui.Services.Overlay.Form
                 if (Equals(form, Parent) || !form.Resizing) continue;
                 Resizing = false;
             }
+        }
+        public override void Load()
+        {
+            Rect = new Rectangle(0, 0, 20, 20);
+            OnMouseIn += mouseInHandler;
+            OnMouseOut += mouseOutHandler;
+            OnLeftMouseBtnPress += mousePressHandler;
+            OnLeftMouseBtnRelease += mouseReleaseHandler;
+            base.Load();
         }
         public override void Update(GameTime gametime, MouseState mouse)
         {
@@ -72,7 +91,14 @@ namespace ui.Services.Overlay.Form
         }
         public override void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Overlay overlay)
         {
-            spriteBatch.Draw(ReadHelper.PixelTexture, Rect, color);
+
+            setVertexs();
+            graphicsDevice.SetVertexBuffer(vertexBuffer);
+            foreach (var pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphicsDevice.DrawPrimitives(PrimitiveType.TriangleStrip, 0, vertexBuffer.VertexCount);
+            }
         }
     }
 }

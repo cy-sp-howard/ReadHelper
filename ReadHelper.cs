@@ -1,6 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using SharpDX.Direct3D9;
 using System;
 using System.Threading;
 using System.Windows.Forms;
@@ -82,11 +81,12 @@ namespace ui
                 cxRightWidth = Graphics.PreferredBackBufferWidth,
                 cyBottomHeight = Graphics.PreferredBackBufferHeight
             };
-            // 無邊框
-            //DwmExtendFrameIntoClientArea(FormHandle, ref marg);
+
             var screenPoint = System.Drawing.Point.Empty;
             ClientToScreen(FormHandle, ref screenPoint);
+
             SetWindowPos(FormHandle, HWND_TOPMOST, screenPoint.X, screenPoint.Y, marg.cxRightWidth, marg.cyBottomHeight, 0);
+            DwmExtendFrameIntoClientArea(FormHandle, ref marg);
 
             foreach (var item in _services)
             {

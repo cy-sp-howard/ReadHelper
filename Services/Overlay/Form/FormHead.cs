@@ -15,7 +15,7 @@ namespace ui.Services.Overlay.Form
         Point mouseMoveStartPos = new Point(-1, -1);
         Point formMoveStartPos = new Point(-1, -1);
         public bool Moving = false;
-        public int Height = 30;
+        public int Height = 100;
         public FormHead()
         {
             OnMouseIn += mouseInHandler;

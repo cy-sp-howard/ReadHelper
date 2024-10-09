@@ -1,28 +1,62 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using ui.Services.Overlay.Form;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using static ui.WindowUtil;
 
 namespace ui.Services.Overlay
 {
     public class Overlay : Gadget, IService
     {
-        public void Load()
+        HookCallbackDelegate mouseHookCB;
+        MouseEventType mouseHookEventType;
+        ButtonState leftBtnState = ButtonState.Released;
+        ButtonState rightBtnState = ButtonState.Released;
+        public override void Load()
         {
+            setInputHook();
             setRect();
             new VirtualForm() { Parent = this, Rect = new Rectangle(20, 0, 500, 200), ZIndex = 1, Resizeable = true };
             new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 50, 50), ZIndex = 0 };
+            base.Load();
         }
         public void Update(GameTime gametime)
         {
             MouseState mouse = Mouse.GetState();
+
+
+            switch (mouseHookEventType)
+            {
+                case MouseEventType.RightMouseButtonPressed:
+                    rightBtnState = ButtonState.Pressed;
+                    break;
+                case MouseEventType.LeftMouseButtonPressed:
+                    leftBtnState = ButtonState.Pressed;
+                    break;
+                case MouseEventType.RightMouseButtonReleased:
+                    rightBtnState = ButtonState.Released;
+                    break;
+                case MouseEventType.LeftMouseButtonReleased:
+                    leftBtnState = ButtonState.Released;
+                    break;
+            }
+            mouse = new MouseState(mouse.X,
+                                   mouse.Y,
+                                   mouse.ScrollWheelValue,
+                                   leftBtnState,
+                                   mouse.MiddleButton,
+                                   rightBtnState,
+                                   mouse.XButton1,
+                                   mouse.XButton2
+                                   );
             base.Update(gametime, mouse);
         }
         public void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
@@ -34,6 +68,27 @@ namespace ui.Services.Overlay
             int winWidth = ReadHelper.Instance.Graphics.PreferredBackBufferWidth;
             int winHeight = ReadHelper.Instance.Graphics.PreferredBackBufferHeight;
             Rect = new Rectangle(0, 0, winWidth, winHeight);
+        }
+        void setInputHook()
+        {
+            mouseHookCB = mouseHookCallback;
+            SetWindowsHookEx(HookType.WH_MOUSE_LL, mouseHookCB, IntPtr.Zero, 0);
+        }
+        int mouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        {
+            mouseHookEventType = (MouseEventType)wParam;
+
+            if (nCode != 0) return CallNextHookEx(HookType.WH_MOUSE_LL, nCode, wParam, lParam);
+
+
+            bool alwaysPass = mouseHookEventType == MouseEventType.MouseMoved || mouseHookEventType == MouseEventType.LeftMouseButtonReleased || mouseHookEventType == MouseEventType.RightMouseButtonReleased;
+            if (alwaysPass) return CallNextHookEx(HookType.WH_MOUSE_LL, nCode, wParam, lParam);
+            if (mouseInChild)
+            {
+                return 1;
+            }
+            return CallNextHookEx(HookType.WH_MOUSE_LL, nCode, wParam, lParam);
+
         }
 
     }
@@ -88,16 +143,21 @@ namespace ui.Services.Overlay
         public event EventHandler<InputEventArgs> OnLeftMouseBtnClick;
         public event EventHandler<InputEventArgs> OnRightMouseBtnClick;
         private bool mouseIn = false;
-        private bool mouseInChild = false;
+        protected bool mouseInChild = false;
         private bool mouseOut = false;
         public event EventHandler<InputEventArgs> OnMouseIn;
         public event EventHandler<InputEventArgs> OnMouseOut;
         public bool MouseIn => mouseIn;
 
+        public virtual void Load()
+        {
+            foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
+            {
+                child.Load();
+            }
+        }
         public virtual void Update(GameTime gametime, MouseState mouse)
         {
-            if (Disabled) return;
-
             bool mouseInRect = Rect.Contains(new Point(mouse.X, mouse.Y));
             mouseInChild = false;
             if (Parent != null)
@@ -116,55 +176,62 @@ namespace ui.Services.Overlay
             {
                 OnMouseOut?.Invoke(this, evt);
             });
+
+
+            bool currentValue = mouse.LeftButton == ButtonState.Pressed;
             if (mouseInRect)
             {
-                bool currentValue = mouse.LeftButton == ButtonState.Pressed;
                 handleEvent(ref leftMouseBtnPressed, currentValue, (evt) =>
                 {
                     OnLeftMouseBtnPress?.Invoke(this, evt);
                 });
                 if (currentValue) readyForLeftClick = true;
+            }
 
-                currentValue = mouse.LeftButton == ButtonState.Released;
-                handleEvent(ref leftMouseBtnReleased, currentValue, (evt) =>
-                {
-                    OnLeftMouseBtnRelease?.Invoke(this, evt);
-                });
-                if (readyForLeftClick && currentValue)
-                {
-                    readyForLeftClick = false;
-                    OnLeftMouseBtnClick?.Invoke(this, new InputEventArgs());
-                }
+            currentValue = !currentValue;
+            handleEvent(ref leftMouseBtnReleased, currentValue, (evt) =>
+            {
+                OnLeftMouseBtnRelease?.Invoke(this, evt);
+            });
+            if (readyForLeftClick && currentValue)
+            {
+                readyForLeftClick = false;
+                OnLeftMouseBtnClick?.Invoke(this, new InputEventArgs());
+            }
 
-                currentValue = mouse.RightButton == ButtonState.Pressed;
+            currentValue = mouse.RightButton == ButtonState.Pressed;
+            if (mouseInRect)
+            {
                 handleEvent(ref rightMouseBtnPressed, currentValue, (evt) =>
                 {
                     OnRightMouseBtnPress?.Invoke(this, evt);
                 });
                 if (currentValue) readyForRightClick = true;
-
-                currentValue = mouse.RightButton == ButtonState.Released;
-                handleEvent(ref rightMouseBtnReleased, currentValue, (evt) =>
-                {
-                    OnRightMouseBtnRelease?.Invoke(this, evt);
-                });
-                if (readyForRightClick && currentValue)
-                {
-                    readyForRightClick = false;
-                    OnRightMouseBtnClick?.Invoke(this, new InputEventArgs());
-                }
             }
+
+            currentValue = !currentValue;
+            handleEvent(ref rightMouseBtnReleased, currentValue, (evt) =>
+            {
+                OnRightMouseBtnRelease?.Invoke(this, evt);
+            });
+            if (readyForRightClick && currentValue)
+            {
+                readyForRightClick = false;
+                OnRightMouseBtnClick?.Invoke(this, new InputEventArgs());
+            }
+
 
             foreach (var child in Children.ToList().OrderByDescending(c => c.ZIndex))
             {
+                if (child.Disabled) continue;
                 child.Update(gametime, mouse);
             }
         }
         public virtual void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Overlay overlay)
         {
-            if (Disabled) return;
             foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
             {
+                if (child.Disabled) continue;
                 child.Draw(spriteBatch, graphicsDevice, overlay);
             }
         }
