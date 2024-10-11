@@ -11,13 +11,15 @@ namespace ui.Services.Overlay.Form
 {
     public class FormHead : Gadget
     {
-        Color color = new Color(10, 10, 10, 0);
+        Color defaultColor = new Color(10, 10, 10, 0);
+        Color color;
         Point mouseMoveStartPos = new Point(-1, -1);
         Point formMoveStartPos = new Point(-1, -1);
         public bool Moving = false;
         public int Height = 50;
         public FormHead()
         {
+            color = defaultColor;
             OnMouseIn += mouseInHandler;
             OnMouseOut += mouseOutHandlerr;
             OnLeftMouseBtnPress += mousePressHandler;
@@ -29,7 +31,7 @@ namespace ui.Services.Overlay.Form
         }
         void mouseOutHandlerr(object sender, MouseEventArgs e)
         {
-            color = new Color(10, 10, 10, 0);
+            color = defaultColor;
         }
         void mousePressHandler(object sender, MouseEventArgs e)
         {

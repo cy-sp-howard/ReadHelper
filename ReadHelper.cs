@@ -101,7 +101,7 @@ namespace ui
             };
 
             var screenPoint = System.Drawing.Point.Empty;
-            ClientToScreen(FormHandle, ref screenPoint); // 取得attach app 大小
+            ClientToScreen(FormHandle, ref screenPoint); 
 
             SetWindowPos(FormHandle, HWND_TOPMOST, screenPoint.X, screenPoint.Y, marg.cxRightWidth, marg.cyBottomHeight, 0);
             DwmExtendFrameIntoClientArea(FormHandle, ref marg);
