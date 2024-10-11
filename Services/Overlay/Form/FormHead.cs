@@ -73,7 +73,7 @@ namespace ui.Services.Overlay.Form
         }
         public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
         {
-            spriteBatch.Draw(ReadHelper.PixelTexture, Rect, color);
+            spriteBatch.Draw(ReadHelper.Texture.PixelTexture, Rect, color);
         }
 
 

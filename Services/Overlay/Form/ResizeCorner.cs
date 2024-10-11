@@ -81,7 +81,7 @@ namespace ui.Services.Overlay.Form
         public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
         {
 
-            spriteBatch.Draw(ReadHelper.CornerTexture, Rect, color);
+            spriteBatch.Draw(ReadHelper.Texture.CornerTexture, Rect, color);
 
         }
     }

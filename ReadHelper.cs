@@ -20,9 +20,8 @@ namespace ui
             Overlay        = new Overlay()
         };
         public static readonly Overlay Overlay;
-        internal static ReadHelper Instance;
-        static public Texture2D PixelTexture;
-        static public Texture2D CornerTexture;
+        public static ReadHelper Instance;
+        public static Texture Texture;
         private System.Drawing.Point location_bak;
         private bool drawStarted = false;
 
@@ -58,26 +57,9 @@ namespace ui
 
         protected override void LoadContent()
         {
-            PixelTexture = new Texture2D(GraphicsDevice, 1, 1);
-            PixelTexture.SetData(new[] { Color.White });
-
-
-            CornerTexture = new Texture2D(GraphicsDevice, 100, 100);
-            Color[] colors = new Color[CornerTexture.Width * CornerTexture.Height];
-            int fillCol = CornerTexture.Width - 1;
-            for (int i = 0; i < CornerTexture.Width; i++)
-            {
-                for (int ii = 0; ii < CornerTexture.Height; ii++)
-                {
-                    if(ii < fillCol) continue;
-                    colors[i * CornerTexture.Width + ii] = Color.White; 
-                }
-                fillCol--;
-            }
-            CornerTexture.SetData(colors);
-
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
+            texture = new Texture(GraphicsDevice);
             foreach (var item in _services)
             {
                 item.Load();

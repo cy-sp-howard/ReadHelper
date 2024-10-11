@@ -35,7 +35,7 @@ namespace ui.Services.Overlay.Form
         }
         public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
         {
-            spriteBatch.Draw(ReadHelper.PixelTexture, Rect, bg);
+            spriteBatch.Draw(ReadHelper.Texture.PixelTexture, Rect, bg);
             base.Draw(spriteBatch, overlay);
         }
         void toTop(object sender, MouseEventArgs e)
