@@ -27,9 +27,9 @@ namespace ui.Services.Overlay.Form
             head = new FormHead() { Parent = this };
             resizeCorner = new ResizeCorner() { Parent = this, Disabled = true };
         }
-        public override void Update(GameTime gametime, MouseState mouse)
+        public override void Update(GameTime gametime, MouseEventArgs mouseEvt)
         {
-            base.Update(gametime, mouse);
+            base.Update(gametime, mouseEvt);
         }
         public override void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Overlay overlay)
         {

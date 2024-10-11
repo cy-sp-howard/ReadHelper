@@ -32,33 +32,33 @@ namespace ui.Services.Overlay.Form
             cornerVertexs[2] = new VertexPositionColor(new Vector3(0, Rect.Height, 0), color);
             vertexBuffer.SetData(cornerVertexs);
         }
-        void mouseInHandler(object sender, InputEventArgs e)
+        void mouseInHandler(object sender, MouseEventArgs e)
         {
             color = new Color(30, 30, 30, 0);
         }
-        void mouseOutHandler(object sender, InputEventArgs e)
+        void mouseOutHandler(object sender, MouseEventArgs e)
         {
             color = Color.Blue;
         }
-        void mousePressHandler(object sender, InputEventArgs e)
+        void mousePressHandler(object sender, MouseEventArgs e)
         {
             Resizing = true;
         }
-        void mouseReleaseHandler(object sender, InputEventArgs e)
+        void mouseReleaseHandler(object sender, MouseEventArgs e)
         {
             Resizing = false;
             resizeStartPos = new Point(-1, -1);
         }
-        void mouseMoveHandler(MouseState mouse)
+        void mouseMoveHandler(MouseEventArgs evt)
         {
             if (!Resizing) return;
             if (resizeStartPos.X < 0)
             {
-                resizeStartPos = mouse.Position;
+                resizeStartPos = new Point(evt.X,evt.Y);
                 resizeStartSize = new Point(Parent.Rect.Width, Parent.Rect.Height);
             }
-            int width = mouse.Position.X - resizeStartPos.X + resizeStartSize.X;
-            int height = mouse.Position.Y - resizeStartPos.Y + resizeStartSize.Y;
+            int width = evt.X - resizeStartPos.X + resizeStartSize.X;
+            int height = evt.Y - resizeStartPos.Y + resizeStartSize.Y;
             if (width <= 100) width = 100;
             if (height <= 100) height = 100;
             Parent.Rect = new Rectangle(Parent.Rect.X, Parent.Rect.Y, width, height);
@@ -81,13 +81,13 @@ namespace ui.Services.Overlay.Form
             OnLeftMouseBtnRelease += mouseReleaseHandler;
             base.Load();
         }
-        public override void Update(GameTime gametime, MouseState mouse)
+        public override void Update(GameTime gametime, MouseEventArgs mouseEvt)
         {
             RelativePosition = new Point(Parent.Rect.Width - Rect.Width, Parent.Rect.Height - Rect.Height);
             checkResizingForm();
-            mouseMoveHandler(mouse);
+            mouseMoveHandler(mouseEvt);
 
-            base.Update(gametime, mouse);
+            base.Update(gametime, mouseEvt);
         }
         public override void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Overlay overlay)
         {

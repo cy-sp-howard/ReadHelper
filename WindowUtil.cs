@@ -11,7 +11,7 @@ using SharpDX.Win32;
 namespace ui
 {
 
-    internal static class WindowUtil
+    public static class WindowUtil
     {
         public const uint WS_EX_TOPMOST = 0x00000008;
         public const uint WS_EX_TRANSPARENT = 0x00000020;

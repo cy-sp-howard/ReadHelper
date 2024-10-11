@@ -17,47 +17,21 @@ namespace ui.Services.Overlay
     public class Overlay : Gadget, IService
     {
         HookCallbackDelegate mouseHookCB;
-        MouseEventType mouseHookEventType;
-        ButtonState leftBtnState = ButtonState.Released;
-        ButtonState rightBtnState = ButtonState.Released;
+        MouseEventArgs mouseEvent; // mouseEvent never type moved ,after handle set null,so hard to overwrite before handle.
         public override void Load()
         {
             setInputHook();
             setRect();
             new VirtualForm() { Parent = this, Rect = new Rectangle(20, 0, 500, 200), ZIndex = 1, Resizeable = true };
-            new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 50, 50), ZIndex = 0 };
+            new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 50, 100), ZIndex = 0 };
             base.Load();
         }
         public void Update(GameTime gametime)
         {
-            MouseState mouse = Mouse.GetState();
-
-
-            switch (mouseHookEventType)
-            {
-                case MouseEventType.RightMouseButtonPressed:
-                    rightBtnState = ButtonState.Pressed;
-                    break;
-                case MouseEventType.LeftMouseButtonPressed:
-                    leftBtnState = ButtonState.Pressed;
-                    break;
-                case MouseEventType.RightMouseButtonReleased:
-                    rightBtnState = ButtonState.Released;
-                    break;
-                case MouseEventType.LeftMouseButtonReleased:
-                    leftBtnState = ButtonState.Released;
-                    break;
-            }
-            mouse = new MouseState(mouse.X,
-                                   mouse.Y,
-                                   mouse.ScrollWheelValue,
-                                   leftBtnState,
-                                   mouse.MiddleButton,
-                                   rightBtnState,
-                                   mouse.XButton1,
-                                   mouse.XButton2
-                                   );
-            base.Update(gametime, mouse);
+            MouseState mouseState = Mouse.GetState();
+            mouseEvent = new MouseEventArgs(mouseEvent == null ? MouseEventType.MouseMoved : mouseEvent.EventType, mouseState.Position);
+            base.Update(gametime, mouseEvent);
+            mouseEvent = null;
         }
         public void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
@@ -76,17 +50,17 @@ namespace ui.Services.Overlay
         }
         int mouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            mouseHookEventType = (MouseEventType)wParam;
+            MouseEventArgs evt = new MouseEventArgs((MouseEventType)wParam, Marshal.PtrToStructure<MouseLLHookStruct>(lParam).Point);
 
-            if (nCode != 0) return CallNextHookEx(HookType.WH_MOUSE_LL, nCode, wParam, lParam);
+            if (nCode != 0 || evt.EventType == MouseEventType.MouseMoved) return CallNextHookEx(HookType.WH_MOUSE_LL, nCode, wParam, lParam);
 
+            bool skip =  evt.EventType == MouseEventType.LeftMouseButtonReleased || evt.EventType == MouseEventType.RightMouseButtonReleased;
 
-            bool alwaysPass = mouseHookEventType == MouseEventType.MouseMoved || mouseHookEventType == MouseEventType.LeftMouseButtonReleased || mouseHookEventType == MouseEventType.RightMouseButtonReleased;
-            if (alwaysPass) return CallNextHookEx(HookType.WH_MOUSE_LL, nCode, wParam, lParam);
-            if (mouseInChild)
+            mouseEvent = evt;
+            if (!skip && mouseInChild)
             {
                 return 1;
-            }
+            };
             return CallNextHookEx(HookType.WH_MOUSE_LL, nCode, wParam, lParam);
 
         }
@@ -134,19 +108,19 @@ namespace ui.Services.Overlay
         private bool rightMouseBtnPressed = false;
         private bool leftMouseBtnReleased = false;
         private bool rightMouseBtnReleased = false;
-        public event EventHandler<InputEventArgs> OnLeftMouseBtnPress;
-        public event EventHandler<InputEventArgs> OnRightMouseBtnPress;
-        public event EventHandler<InputEventArgs> OnLeftMouseBtnRelease;
-        public event EventHandler<InputEventArgs> OnRightMouseBtnRelease;
+        public event EventHandler<MouseEventArgs> OnLeftMouseBtnPress;
+        public event EventHandler<MouseEventArgs> OnRightMouseBtnPress;
+        public event EventHandler<MouseEventArgs> OnLeftMouseBtnRelease;
+        public event EventHandler<MouseEventArgs> OnRightMouseBtnRelease;
         private bool readyForLeftClick = false;
         private bool readyForRightClick = false;
-        public event EventHandler<InputEventArgs> OnLeftMouseBtnClick;
-        public event EventHandler<InputEventArgs> OnRightMouseBtnClick;
+        public event EventHandler<MouseEventArgs> OnLeftMouseBtnClick;
+        public event EventHandler<MouseEventArgs> OnRightMouseBtnClick;
         private bool mouseIn = false;
         protected bool mouseInChild = false;
         private bool mouseOut = false;
-        public event EventHandler<InputEventArgs> OnMouseIn;
-        public event EventHandler<InputEventArgs> OnMouseOut;
+        public event EventHandler<MouseEventArgs> OnMouseIn;
+        public event EventHandler<MouseEventArgs> OnMouseOut;
         public bool MouseIn => mouseIn;
 
         public virtual void Load()
@@ -156,9 +130,9 @@ namespace ui.Services.Overlay
                 child.Load();
             }
         }
-        public virtual void Update(GameTime gametime, MouseState mouse)
+        public virtual void Update(GameTime gametime, MouseEventArgs mouseEvt)
         {
-            bool mouseInRect = Rect.Contains(new Point(mouse.X, mouse.Y));
+            bool mouseInRect = Rect.Contains(new Point(mouseEvt.X, mouseEvt.Y));
             mouseInChild = false;
             if (Parent != null)
             {
@@ -167,64 +141,64 @@ namespace ui.Services.Overlay
                 else if (mouseInRect) Parent.mouseInChild = true;
             }
 
-            handleEvent(ref mouseIn, mouseInRect, (evt) =>
+            handleEvent(ref mouseIn, mouseInRect, () =>
             {
-                OnMouseIn?.Invoke(this, evt);
+                OnMouseIn?.Invoke(this, mouseEvt);
             });
 
-            handleEvent(ref mouseOut, !mouseInRect, (evt) =>
+            handleEvent(ref mouseOut, !mouseInRect, () =>
             {
-                OnMouseOut?.Invoke(this, evt);
+                OnMouseOut?.Invoke(this, mouseEvt);
             });
 
 
-            bool currentValue = mouse.LeftButton == ButtonState.Pressed;
+            bool currentValue = mouseEvt.EventType == MouseEventType.LeftMouseButtonPressed;
             if (mouseInRect)
             {
-                handleEvent(ref leftMouseBtnPressed, currentValue, (evt) =>
+                handleEvent(ref leftMouseBtnPressed, currentValue, () =>
                 {
-                    OnLeftMouseBtnPress?.Invoke(this, evt);
+                    OnLeftMouseBtnPress?.Invoke(this, mouseEvt);
                 });
                 if (currentValue) readyForLeftClick = true;
             }
 
-            currentValue = !currentValue;
-            handleEvent(ref leftMouseBtnReleased, currentValue, (evt) =>
+            currentValue = mouseEvt.EventType == MouseEventType.LeftMouseButtonReleased;
+            handleEvent(ref leftMouseBtnReleased, currentValue, () =>
             {
-                OnLeftMouseBtnRelease?.Invoke(this, evt);
+                OnLeftMouseBtnRelease?.Invoke(this, mouseEvt);
             });
             if (readyForLeftClick && currentValue)
             {
                 readyForLeftClick = false;
-                OnLeftMouseBtnClick?.Invoke(this, new InputEventArgs());
+                OnLeftMouseBtnClick?.Invoke(this, mouseEvt);
             }
 
-            currentValue = mouse.RightButton == ButtonState.Pressed;
+            currentValue = mouseEvt.EventType == MouseEventType.RightMouseButtonPressed;
             if (mouseInRect)
             {
-                handleEvent(ref rightMouseBtnPressed, currentValue, (evt) =>
+                handleEvent(ref rightMouseBtnPressed, currentValue, () =>
                 {
-                    OnRightMouseBtnPress?.Invoke(this, evt);
+                    OnRightMouseBtnPress?.Invoke(this, mouseEvt);
                 });
                 if (currentValue) readyForRightClick = true;
             }
 
-            currentValue = !currentValue;
-            handleEvent(ref rightMouseBtnReleased, currentValue, (evt) =>
+            currentValue = mouseEvt.EventType == MouseEventType.RightMouseButtonReleased;
+            handleEvent(ref rightMouseBtnReleased, currentValue, () =>
             {
-                OnRightMouseBtnRelease?.Invoke(this, evt);
+                OnRightMouseBtnRelease?.Invoke(this, mouseEvt);
             });
             if (readyForRightClick && currentValue)
             {
                 readyForRightClick = false;
-                OnRightMouseBtnClick?.Invoke(this, new InputEventArgs());
+                OnRightMouseBtnClick?.Invoke(this, mouseEvt);
             }
 
 
             foreach (var child in Children.ToList().OrderByDescending(c => c.ZIndex))
             {
                 if (child.Disabled) continue;
-                child.Update(gametime, mouse);
+                child.Update(gametime, mouseEvt);
             }
         }
         public virtual void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Overlay overlay)
@@ -235,7 +209,7 @@ namespace ui.Services.Overlay
                 child.Draw(spriteBatch, graphicsDevice, overlay);
             }
         }
-        static void handleEvent(ref bool previousValue, bool currentValue, Action<InputEventArgs> eventRef)
+        static void handleEvent(ref bool previousValue, bool currentValue, Action eventRef)
         {
             if (!Equals(previousValue, currentValue))
             {
@@ -243,14 +217,20 @@ namespace ui.Services.Overlay
                 previousValue = currentValue;
                 if (currentValue)
                 {
-                    eventRef(new InputEventArgs());
+                    eventRef();
                 }
             }
         }
-        public class InputEventArgs : EventArgs
+        public class MouseEventArgs : EventArgs
         {
-            public InputEventArgs()
+            public MouseEventType EventType { get; }
+            public int X { get; }
+            public int Y { get; }
+            public MouseEventArgs(MouseEventType type, Point pos)
             {
+                X = pos.X;
+                Y = pos.Y;
+                EventType = type;
             }
         }
     }

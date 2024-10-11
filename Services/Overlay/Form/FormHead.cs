@@ -15,7 +15,7 @@ namespace ui.Services.Overlay.Form
         Point mouseMoveStartPos = new Point(-1, -1);
         Point formMoveStartPos = new Point(-1, -1);
         public bool Moving = false;
-        public int Height = 100;
+        public int Height = 50;
         public FormHead()
         {
             OnMouseIn += mouseInHandler;
@@ -23,33 +23,33 @@ namespace ui.Services.Overlay.Form
             OnLeftMouseBtnPress += mousePressHandler;
             OnLeftMouseBtnRelease += mouseReleaseHandler;
         }
-        void mouseInHandler(object sender, InputEventArgs e)
+        void mouseInHandler(object sender, MouseEventArgs e)
         {
             color = new Color(30, 30, 30, 0);
         }
-        void mouseOutHandlerr(object sender, InputEventArgs e)
+        void mouseOutHandlerr(object sender, MouseEventArgs e)
         {
             color = new Color(10, 10, 10, 0);
         }
-        void mousePressHandler(object sender, InputEventArgs e)
+        void mousePressHandler(object sender, MouseEventArgs e)
         {
             Moving = true;
         }
-        void mouseReleaseHandler(object sender, InputEventArgs e)
+        void mouseReleaseHandler(object sender, MouseEventArgs e)
         {
             Moving = false;
             mouseMoveStartPos = new Point(-1, -1);
         }
-        void mouseMoveHandler(MouseState mouse)
+        void mouseMoveHandler(MouseEventArgs evt)
         {
             if (!Moving) return;
             if (mouseMoveStartPos.X < 0)
             {
-                mouseMoveStartPos = mouse.Position;
+                mouseMoveStartPos = new Point(evt.X, evt.Y);
                 formMoveStartPos = new Point(Parent.Rect.X, Parent.Rect.Y);
             }
-            int moveX = mouse.Position.X - mouseMoveStartPos.X;
-            int moveY = mouse.Position.Y - mouseMoveStartPos.Y;
+            int moveX = evt.X - mouseMoveStartPos.X;
+            int moveY = evt.Y - mouseMoveStartPos.Y;
             Parent.Rect = new Rectangle(formMoveStartPos.X + moveX, formMoveStartPos.Y + moveY, Parent.Rect.Width, Parent.Rect.Height);
         }
         void checkMovingForm()
@@ -61,13 +61,13 @@ namespace ui.Services.Overlay.Form
                 Moving = false;
             }
         }
-        public override void Update(GameTime gametime, MouseState mouse)
+        public override void Update(GameTime gametime, MouseEventArgs mouseEvt)
         {
             Rect = new Rectangle(Parent.Rect.X, Parent.Rect.Y, Parent.Rect.Width, Height);
             checkMovingForm();
-            mouseMoveHandler(mouse);
+            mouseMoveHandler(mouseEvt);
 
-            base.Update(gametime, mouse);
+            base.Update(gametime, mouseEvt);
         }
         public override void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Overlay overlay)
         {
