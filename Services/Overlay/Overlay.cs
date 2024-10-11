@@ -22,8 +22,8 @@ namespace ui.Services.Overlay
         {
             setInputHook();
             setRect();
-            new VirtualForm() { Parent = this, Rect = new Rectangle(20, 0, 500, 200), ZIndex = 1, Resizeable = true };
-            new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 50, 100), ZIndex = 0 };
+            new VirtualForm() { Parent = this, Rect = new Rectangle(20, 0, 500, 200), Resizeable = true };
+            new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 50, 100) };
             base.Load();
         }
         public void Update(GameTime gametime)
@@ -33,9 +33,9 @@ namespace ui.Services.Overlay
             base.Update(gametime, mouseEvent);
             mouseEvent = null;
         }
-        public void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
+        public void Draw(SpriteBatch spriteBatch)
         {
-            base.Draw(spriteBatch, graphicsDevice, this);
+            base.Draw(spriteBatch, this);
         }
         void setRect()
         {
@@ -54,7 +54,7 @@ namespace ui.Services.Overlay
 
             if (nCode != 0 || evt.EventType == MouseEventType.MouseMoved) return CallNextHookEx(HookType.WH_MOUSE_LL, nCode, wParam, lParam);
 
-            bool skip =  evt.EventType == MouseEventType.LeftMouseButtonReleased || evt.EventType == MouseEventType.RightMouseButtonReleased;
+            bool skip = evt.EventType == MouseEventType.LeftMouseButtonReleased || evt.EventType == MouseEventType.RightMouseButtonReleased;
 
             mouseEvent = evt;
             if (!skip && mouseInChild)
@@ -194,19 +194,21 @@ namespace ui.Services.Overlay
                 OnRightMouseBtnClick?.Invoke(this, mouseEvt);
             }
 
-
+            int index = 0;
             foreach (var child in Children.ToList().OrderByDescending(c => c.ZIndex))
             {
+                child.ZIndex = index * -1;
+                index++;
                 if (child.Disabled) continue;
                 child.Update(gametime, mouseEvt);
             }
         }
-        public virtual void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Overlay overlay)
+        public virtual void Draw(SpriteBatch spriteBatch, Overlay overlay)
         {
             foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
             {
                 if (child.Disabled) continue;
-                child.Draw(spriteBatch, graphicsDevice, overlay);
+                child.Draw(spriteBatch, overlay);
             }
         }
         static void handleEvent(ref bool previousValue, bool currentValue, Action eventRef)

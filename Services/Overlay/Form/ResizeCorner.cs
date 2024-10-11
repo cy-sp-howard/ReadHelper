@@ -15,30 +15,19 @@ namespace ui.Services.Overlay.Form
         Point resizeStartPos = new Point(-1, -1);
         Point resizeStartSize = new Point(-1, -1);
         VertexPositionColor[] cornerVertexs = new VertexPositionColor[3];
-        Color color = Color.Blue;
-        static BasicEffect effect;
-        static VertexBuffer vertexBuffer;
+        Color color = Color.Transparent;
         public bool Resizing = false;
         static ResizeCorner()
         {
-            effect = new BasicEffect(ReadHelper.Instance.GraphicsDevice);
-            effect.VertexColorEnabled = true;
-           vertexBuffer = new VertexBuffer(ReadHelper.Instance.GraphicsDevice, VertexPositionColor.VertexDeclaration, 3, BufferUsage.WriteOnly);
-        }
-        void setVertexs()
-        {
-            cornerVertexs[0] = new VertexPositionColor(new Vector3(Rect.X, 0, 0), color);
-            cornerVertexs[1] = new VertexPositionColor(new Vector3(Rect.X, 1, 0), color);
-            cornerVertexs[2] = new VertexPositionColor(new Vector3(0, Rect.Height, 0), color);
-            vertexBuffer.SetData(cornerVertexs);
+       
         }
         void mouseInHandler(object sender, MouseEventArgs e)
         {
-            color = new Color(30, 30, 30, 0);
+            color = new Color(30, 30, 30,0);
         }
         void mouseOutHandler(object sender, MouseEventArgs e)
         {
-            color = Color.Blue;
+            color = Color.Transparent;
         }
         void mousePressHandler(object sender, MouseEventArgs e)
         {
@@ -54,7 +43,7 @@ namespace ui.Services.Overlay.Form
             if (!Resizing) return;
             if (resizeStartPos.X < 0)
             {
-                resizeStartPos = new Point(evt.X,evt.Y);
+                resizeStartPos = new Point(evt.X, evt.Y);
                 resizeStartSize = new Point(Parent.Rect.Width, Parent.Rect.Height);
             }
             int width = evt.X - resizeStartPos.X + resizeStartSize.X;
@@ -89,16 +78,11 @@ namespace ui.Services.Overlay.Form
 
             base.Update(gametime, mouseEvt);
         }
-        public override void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Overlay overlay)
+        public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
         {
 
-            setVertexs();
-            graphicsDevice.SetVertexBuffer(vertexBuffer);
-            foreach (var pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                graphicsDevice.DrawPrimitives(PrimitiveType.TriangleStrip, 0, vertexBuffer.VertexCount);
-            }
+            spriteBatch.Draw(ReadHelper.CornerTexture, Rect, color);
+
         }
     }
 }

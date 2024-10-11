@@ -26,15 +26,23 @@ namespace ui.Services.Overlay.Form
             AllForms.Add(this);
             head = new FormHead() { Parent = this };
             resizeCorner = new ResizeCorner() { Parent = this, Disabled = true };
+            OnLeftMouseBtnPress += toTop;
+
         }
         public override void Update(GameTime gametime, MouseEventArgs mouseEvt)
         {
             base.Update(gametime, mouseEvt);
         }
-        public override void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Overlay overlay)
+        public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
         {
             spriteBatch.Draw(ReadHelper.PixelTexture, Rect, bg);
-            base.Draw(spriteBatch, graphicsDevice, overlay);
+            base.Draw(spriteBatch, overlay);
+        }
+        void toTop(object sender, MouseEventArgs e)
+        {
+            Gadget topGadget =  Parent.Children.MaxBy(child => child.ZIndex);
+            if (Equals(topGadget, this)) return;
+            ZIndex = topGadget.ZIndex + 1;
         }
     }
 }

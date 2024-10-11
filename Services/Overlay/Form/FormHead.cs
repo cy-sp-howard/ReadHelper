@@ -69,7 +69,7 @@ namespace ui.Services.Overlay.Form
 
             base.Update(gametime, mouseEvt);
         }
-        public override void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Overlay overlay)
+        public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
         {
             spriteBatch.Draw(ReadHelper.PixelTexture, Rect, color);
         }
