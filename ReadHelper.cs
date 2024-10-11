@@ -59,7 +59,7 @@ namespace ui
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            texture = new Texture(GraphicsDevice);
+            Texture = new Texture(GraphicsDevice);
             foreach (var item in _services)
             {
                 item.Load();
