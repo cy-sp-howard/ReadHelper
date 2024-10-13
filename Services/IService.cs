@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ui.Services
+namespace ReadHelper.Services
 {
     internal interface IService
     {

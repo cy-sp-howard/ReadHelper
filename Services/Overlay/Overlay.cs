@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using ui.Services.Overlay.Form;
-using static ui.WindowUtil;
+using ReadHelper.Services.Overlay.Form;
+using static ReadHelper.WindowUtil;
 
-namespace ui.Services.Overlay
+namespace ReadHelper.Services.Overlay
 {
     public class Overlay : Gadget, IService
     {

@@ -9,7 +9,7 @@ using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using Microsoft.Xna.Framework.Input;
 
-namespace ui.Services.Overlay.Form
+namespace ReadHelper.Services.Overlay.Form
 {
     public class VirtualForm : Gadget
     {

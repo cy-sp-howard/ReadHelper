@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
-namespace ui.Services.Overlay.Form
+namespace ReadHelper.Services.Overlay.Form
 {
     public class ResizeCorner : Gadget
     {

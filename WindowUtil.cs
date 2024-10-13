@@ -8,7 +8,7 @@ using SharpDX.Win32;
 // ReSharper disable FieldCanBeMadeReadOnly.Local
 // ReSharper disable InconsistentNaming
 
-namespace ui
+namespace ReadHelper
 {
 
     public static class WindowUtil

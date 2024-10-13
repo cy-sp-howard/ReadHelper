@@ -3,11 +3,11 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Threading;
 using System.Windows.Forms;
-using ui.Services;
-using ui.Services.Overlay;
-using static ui.WindowUtil;
+using ReadHelper.Services;
+using ReadHelper.Services.Overlay;
+using static ReadHelper.WindowUtil;
 
-namespace ui
+namespace ReadHelper
 {
     public class ReadHelper : Game
     {
