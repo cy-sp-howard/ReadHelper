@@ -18,13 +18,15 @@ namespace ReadHelper.Services.Overlay
     public class Overlay : ParentGadget, IService
     {
         HookCallbackDelegate mouseHookCB;
+        VirtualForm form1;
+        VirtualForm form2;
         MouseEventArgs mouseEvent; // mouseEvent never moved type ,after handle set null,so hard to overwrite before handle.
         public override void Load()
         {
-            setInputHook();
-            setRect();
-            new VirtualForm() { Parent = this, Rect = new Rectangle(20, 0, 500, 200), Resizeable = true };
-            new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 50, 100) };
+            SetInputHook();
+            SetRect();
+            form1 =  new MainForm() { Parent = this };
+            form2  = new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 50, 100) };
             base.Load();
         }
         public void Update(GameTime gametime)
@@ -38,20 +40,20 @@ namespace ReadHelper.Services.Overlay
         {
             base.Draw(spriteBatch, this);
         }
-        void setRect()
+        void SetRect()
         {
             int winWidth = ReadHelper.Instance.Graphics.PreferredBackBufferWidth;
             int winHeight = ReadHelper.Instance.Graphics.PreferredBackBufferHeight;
             Rect = new Rectangle(0, 0, winWidth, winHeight);
         }
-        void setInputHook()
+        void SetInputHook()
         {
-            mouseHookCB = mouseHookCallback;
+            mouseHookCB = MouseHookCallback;
             SetWindowsHookEx(HookType.WH_MOUSE_LL, mouseHookCB, IntPtr.Zero, 0);
         }
-        int mouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        int MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            MouseEventArgs evt = new MouseEventArgs((MouseEventType)wParam, Marshal.PtrToStructure<MouseLLHookStruct>(lParam).Point);
+            MouseEventArgs evt = new((MouseEventType)wParam, Marshal.PtrToStructure<MouseLLHookStruct>(lParam).Point);
 
             if (nCode != 0 || evt.EventType == MouseEventType.MouseMoved) return CallNextHookEx(HookType.WH_MOUSE_LL, nCode, wParam, lParam);
 
@@ -69,22 +71,30 @@ namespace ReadHelper.Services.Overlay
     }
     public class Gadget
     {
-        public Rectangle Rect = new Rectangle(0, 0, 0, 0);
+        public Rectangle Rect = new(0, 0, 0, 0);
         public Point RelativePosition
         {
             get
             {
-                if (parent == null) return new Point(Rect.X, Rect.Y);
+                if (parent == null) return Rect.Location;
                 return new Point(Rect.X - parent.Rect.X, Rect.Y - parent.Rect.Y);
             }
             set
             {
                 if (parent == null)
                 {
-                    new Rectangle(value.X, value.Y, Rect.Width, Rect.Height);
+                    Rect =  new Rectangle(value, Rect.Size);
                     return;
                 };
                 Rect = new Rectangle(value.X + parent.Rect.X, value.Y + parent.Rect.Y, Rect.Width, Rect.Height);
+            }
+        }
+        public Point Size
+        {
+            get => Rect.Size;
+            set
+            {
+                Rect = new Rectangle(Rect.Location, value);
             }
         }
         public int ZIndex = 0;
@@ -94,12 +104,9 @@ namespace ReadHelper.Services.Overlay
             get => parent;
             set
             {
-                if (parent != null) parent.Children.Remove(this);
+                parent?.Children.Remove(this);
                 parent = value;
-                if (parent != null)
-                {
-                    parent.Children.Add(this);
-                };
+                parent?.Children.Add(this);;
             }
         }
         private ParentGadget parent = null;
@@ -123,7 +130,7 @@ namespace ReadHelper.Services.Overlay
         public bool MouseIn => mouseIn;
 
         public virtual void Load() { }
-        public virtual void Update(GameTime gametime, MouseEventArgs mouseEvt)
+        public virtual void Update(GameTime gametime, MouseEventArgs mouseEvt) //need call first if inherit
         {
             bool mouseInRect = Rect.Contains(new Point(mouseEvt.X, mouseEvt.Y));
             mouseInChild = false;
@@ -134,12 +141,12 @@ namespace ReadHelper.Services.Overlay
                 else if (mouseInRect) Parent.mouseInChild = true;
             }
 
-            handleEvent(ref mouseIn, mouseInRect, () =>
+            HandleEvent(ref mouseIn, mouseInRect, () =>
             {
                 OnMouseIn?.Invoke(this, mouseEvt);
             });
 
-            handleEvent(ref mouseOut, !mouseInRect, () =>
+            HandleEvent(ref mouseOut, !mouseInRect, () =>
             {
                 OnMouseOut?.Invoke(this, mouseEvt);
             });
@@ -148,7 +155,7 @@ namespace ReadHelper.Services.Overlay
             bool currentValue = mouseEvt.EventType == MouseEventType.LeftMouseButtonPressed;
             if (mouseInRect)
             {
-                handleEvent(ref leftMouseBtnPressed, currentValue, () =>
+                HandleEvent(ref leftMouseBtnPressed, currentValue, () =>
                 {
                     OnLeftMouseBtnPress?.Invoke(this, mouseEvt);
                 });
@@ -156,7 +163,7 @@ namespace ReadHelper.Services.Overlay
             }
 
             currentValue = mouseEvt.EventType == MouseEventType.LeftMouseButtonReleased;
-            handleEvent(ref leftMouseBtnReleased, currentValue, () =>
+            HandleEvent(ref leftMouseBtnReleased, currentValue, () =>
             {
                 OnLeftMouseBtnRelease?.Invoke(this, mouseEvt);
             });
@@ -169,7 +176,7 @@ namespace ReadHelper.Services.Overlay
             currentValue = mouseEvt.EventType == MouseEventType.RightMouseButtonPressed;
             if (mouseInRect)
             {
-                handleEvent(ref rightMouseBtnPressed, currentValue, () =>
+                HandleEvent(ref rightMouseBtnPressed, currentValue, () =>
                 {
                     OnRightMouseBtnPress?.Invoke(this, mouseEvt);
                 });
@@ -177,7 +184,7 @@ namespace ReadHelper.Services.Overlay
             }
 
             currentValue = mouseEvt.EventType == MouseEventType.RightMouseButtonReleased;
-            handleEvent(ref rightMouseBtnReleased, currentValue, () =>
+            HandleEvent(ref rightMouseBtnReleased, currentValue, () =>
             {
                 OnRightMouseBtnRelease?.Invoke(this, mouseEvt);
             });
@@ -186,15 +193,12 @@ namespace ReadHelper.Services.Overlay
                 readyForRightClick = false;
                 OnRightMouseBtnClick?.Invoke(this, mouseEvt);
             }
-
-
         }
         public virtual void Draw(SpriteBatch spriteBatch, Overlay overlay) { }
-        static void handleEvent(ref bool previousValue, bool currentValue, Action eventRef)
+        static void HandleEvent(ref bool previousValue, bool currentValue, Action eventRef)
         {
             if (!Equals(previousValue, currentValue))
             {
-                bool _previousValue = previousValue;
                 previousValue = currentValue;
                 if (currentValue)
                 {
@@ -202,23 +206,17 @@ namespace ReadHelper.Services.Overlay
                 }
             }
         }
-        public class MouseEventArgs : EventArgs
+        public class MouseEventArgs(WindowUtil.MouseEventType type, Point pos) : EventArgs
         {
-            public MouseEventType EventType { get; }
-            public int X { get; }
-            public int Y { get; }
-            public MouseEventArgs(MouseEventType type, Point pos)
-            {
-                X = pos.X;
-                Y = pos.Y;
-                EventType = type;
-            }
+            public MouseEventType EventType { get; } = type;
+            public int X { get; } = pos.X;
+            public int Y { get; } = pos.Y;
         }
     }
     public class ParentGadget : Gadget
     {
         // only set by Parent set except Overlay
-        public readonly HashSet<Gadget> Children = new HashSet<Gadget>();
+        public readonly HashSet<Gadget> Children = [];
         public override void Load()
         {
             foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))

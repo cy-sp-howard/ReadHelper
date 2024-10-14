@@ -12,33 +12,32 @@ namespace ReadHelper.Services.Overlay.Form
     public class ResizeCorner : Gadget
     {
 
-        Point resizeStartPos = new Point(-1, -1);
-        Point resizeStartSize = new Point(-1, -1);
-        VertexPositionColor[] cornerVertexs = new VertexPositionColor[3];
+        Point resizeStartPos = new(-1, -1);
+        Point resizeStartSize = new(-1, -1);
         Color color = Color.Transparent;
         public bool Resizing = false;
         static ResizeCorner()
         {
        
         }
-        void mouseInHandler(object sender, MouseEventArgs e)
+        void MouseInHandler(object sender, MouseEventArgs e)
         {
             color = new Color(30, 30, 30,0);
         }
-        void mouseOutHandler(object sender, MouseEventArgs e)
+        void MouseOutHandler(object sender, MouseEventArgs e)
         {
             color = Color.Transparent;
         }
-        void mousePressHandler(object sender, MouseEventArgs e)
+        void MousePressHandler(object sender, MouseEventArgs e)
         {
             Resizing = true;
         }
-        void mouseReleaseHandler(object sender, MouseEventArgs e)
+        void MouseReleaseHandler(object sender, MouseEventArgs e)
         {
             Resizing = false;
             resizeStartPos = new Point(-1, -1);
         }
-        void mouseMoveHandler(MouseEventArgs evt)
+        void MouseMoveHandler(MouseEventArgs evt)
         {
             if (!Resizing) return;
             if (resizeStartPos.X < 0)
@@ -52,7 +51,7 @@ namespace ReadHelper.Services.Overlay.Form
             if (height <= 100) height = 100;
             Parent.Rect = new Rectangle(Parent.Rect.X, Parent.Rect.Y, width, height);
         }
-        void checkResizingForm()
+        void CheckResizingForm()
         {
             if (MouseIn) return;
             foreach (var form in VirtualForm.AllForms)
@@ -64,17 +63,17 @@ namespace ReadHelper.Services.Overlay.Form
         public override void Load()
         {
             Rect = new Rectangle(0, 0, 20, 20);
-            OnMouseIn += mouseInHandler;
-            OnMouseOut += mouseOutHandler;
-            OnLeftMouseBtnPress += mousePressHandler;
-            OnLeftMouseBtnRelease += mouseReleaseHandler;
+            OnMouseIn += MouseInHandler;
+            OnMouseOut += MouseOutHandler;
+            OnLeftMouseBtnPress += MousePressHandler;
+            OnLeftMouseBtnRelease += MouseReleaseHandler;
             base.Load();
         }
         public override void Update(GameTime gametime, MouseEventArgs mouseEvt)
         {
             RelativePosition = new Point(Parent.Rect.Width - Rect.Width, Parent.Rect.Height - Rect.Height);
-            checkResizingForm();
-            mouseMoveHandler(mouseEvt);
+            CheckResizingForm();
+            MouseMoveHandler(mouseEvt);
 
             base.Update(gametime, mouseEvt);
         }

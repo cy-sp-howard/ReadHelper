@@ -11,38 +11,38 @@ namespace ReadHelper.Services.Overlay.Form
 {
     public class FormHead : Gadget
     {
-        Color defaultColor = new Color(10, 10, 10, 0);
+        Color defaultColor = new(10, 10, 10, 0);
         Color color;
-        Point mouseMoveStartPos = new Point(-1, -1);
-        Point formMoveStartPos = new Point(-1, -1);
+        Point mouseMoveStartPos = new(-1, -1);
+        Point formMoveStartPos = new (-1, -1);
         public bool Moving = false;
         public int Height = 50;
         public FormHead()
         {
             color = defaultColor;
-            OnMouseIn += mouseInHandler;
-            OnMouseOut += mouseOutHandlerr;
-            OnLeftMouseBtnPress += mousePressHandler;
-            OnLeftMouseBtnRelease += mouseReleaseHandler;
+            OnMouseIn += MouseInHandler;
+            OnMouseOut += MouseOutHandlerr;
+            OnLeftMouseBtnPress += MousePressHandler;
+            OnLeftMouseBtnRelease += MouseReleaseHandler;
         }
-        void mouseInHandler(object sender, MouseEventArgs e)
+        void MouseInHandler(object sender, MouseEventArgs e)
         {
             color = new Color(30, 30, 30, 0);
         }
-        void mouseOutHandlerr(object sender, MouseEventArgs e)
+        void MouseOutHandlerr(object sender, MouseEventArgs e)
         {
             color = defaultColor;
         }
-        void mousePressHandler(object sender, MouseEventArgs e)
+        void MousePressHandler(object sender, MouseEventArgs e)
         {
             Moving = true;
         }
-        void mouseReleaseHandler(object sender, MouseEventArgs e)
+        void MouseReleaseHandler(object sender, MouseEventArgs e)
         {
             Moving = false;
             mouseMoveStartPos = new Point(-1, -1);
         }
-        void mouseMoveHandler(MouseEventArgs evt)
+        void MouseMoveHandler(MouseEventArgs evt)
         {
             if (!Moving) return;
             if (mouseMoveStartPos.X < 0)
@@ -54,7 +54,7 @@ namespace ReadHelper.Services.Overlay.Form
             int moveY = evt.Y - mouseMoveStartPos.Y;
             Parent.Rect = new Rectangle(formMoveStartPos.X + moveX, formMoveStartPos.Y + moveY, Parent.Rect.Width, Parent.Rect.Height);
         }
-        void checkMovingForm()
+        void CheckMovingForm()
         {
             if (MouseIn) return;
             foreach (var form in VirtualForm.AllForms)
@@ -66,8 +66,8 @@ namespace ReadHelper.Services.Overlay.Form
         public override void Update(GameTime gametime, MouseEventArgs mouseEvt)
         {
             Rect = new Rectangle(Parent.Rect.X, Parent.Rect.Y, Parent.Rect.Width, Height);
-            checkMovingForm();
-            mouseMoveHandler(mouseEvt);
+            CheckMovingForm();
+            MouseMoveHandler(mouseEvt);
 
             base.Update(gametime, mouseEvt);
         }
