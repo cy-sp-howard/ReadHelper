@@ -17,7 +17,7 @@ namespace ReadHelper.Services.Overlay
     public class Overlay : Gadget, IService
     {
         HookCallbackDelegate mouseHookCB;
-        MouseEventArgs mouseEvent; // mouseEvent never type moved ,after handle set null,so hard to overwrite before handle.
+        MouseEventArgs mouseEvent; // mouseEvent never moved type ,after handle set null,so hard to overwrite before handle.
         public override void Load()
         {
             setInputHook();
