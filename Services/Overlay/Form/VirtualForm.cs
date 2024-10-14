@@ -11,7 +11,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace ReadHelper.Services.Overlay.Form
 {
-    public class VirtualForm : Gadget
+    public class VirtualForm : ParentGadget
     {
 
         public static readonly HashSet<VirtualForm> AllForms = new HashSet<VirtualForm>();

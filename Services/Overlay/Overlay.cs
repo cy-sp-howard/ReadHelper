@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,7 +15,7 @@ using static ReadHelper.WindowUtil;
 
 namespace ReadHelper.Services.Overlay
 {
-    public class Overlay : Gadget, IService
+    public class Overlay : ParentGadget, IService
     {
         HookCallbackDelegate mouseHookCB;
         MouseEventArgs mouseEvent; // mouseEvent never moved type ,after handle set null,so hard to overwrite before handle.
@@ -88,7 +89,7 @@ namespace ReadHelper.Services.Overlay
         }
         public int ZIndex = 0;
         public bool Disabled = false;
-        public Gadget Parent
+        public ParentGadget Parent
         {
             get => parent;
             set
@@ -101,9 +102,7 @@ namespace ReadHelper.Services.Overlay
                 };
             }
         }
-        private Gadget parent = null;
-        // only set by Parent set except Overlay
-        public readonly HashSet<Gadget> Children = new HashSet<Gadget>();
+        private ParentGadget parent = null;
         private bool leftMouseBtnPressed = false;
         private bool rightMouseBtnPressed = false;
         private bool leftMouseBtnReleased = false;
@@ -123,13 +122,7 @@ namespace ReadHelper.Services.Overlay
         public event EventHandler<MouseEventArgs> OnMouseOut;
         public bool MouseIn => mouseIn;
 
-        public virtual void Load()
-        {
-            foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
-            {
-                child.Load();
-            }
-        }
+        public virtual void Load() { }
         public virtual void Update(GameTime gametime, MouseEventArgs mouseEvt)
         {
             bool mouseInRect = Rect.Contains(new Point(mouseEvt.X, mouseEvt.Y));
@@ -194,23 +187,9 @@ namespace ReadHelper.Services.Overlay
                 OnRightMouseBtnClick?.Invoke(this, mouseEvt);
             }
 
-            int index = 0;
-            foreach (var child in Children.ToList().OrderByDescending(c => c.ZIndex))
-            {
-                child.ZIndex = index * -1;
-                index++;
-                if (child.Disabled) continue;
-                child.Update(gametime, mouseEvt);
-            }
+
         }
-        public virtual void Draw(SpriteBatch spriteBatch, Overlay overlay)
-        {
-            foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
-            {
-                if (child.Disabled) continue;
-                child.Draw(spriteBatch, overlay);
-            }
-        }
+        public virtual void Draw(SpriteBatch spriteBatch, Overlay overlay) { }
         static void handleEvent(ref bool previousValue, bool currentValue, Action eventRef)
         {
             if (!Equals(previousValue, currentValue))
@@ -233,6 +212,38 @@ namespace ReadHelper.Services.Overlay
                 X = pos.X;
                 Y = pos.Y;
                 EventType = type;
+            }
+        }
+    }
+    public class ParentGadget : Gadget
+    {
+        // only set by Parent set except Overlay
+        public readonly HashSet<Gadget> Children = new HashSet<Gadget>();
+        public override void Load()
+        {
+            foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
+            {
+                child.Load();
+            }
+        }
+        public override void Update(GameTime gametime, MouseEventArgs mouseEvt)
+        {
+            base.Update(gametime, mouseEvt);
+            int index = 0;
+            foreach (var child in Children.ToList().OrderByDescending(c => c.ZIndex))
+            {
+                child.ZIndex = index * -1;
+                index++;
+                if (child.Disabled) continue;
+                child.Update(gametime, mouseEvt);
+            }
+        }
+        public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
+        {
+            foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
+            {
+                if (child.Disabled) continue;
+                child.Draw(spriteBatch, overlay);
             }
         }
     }
