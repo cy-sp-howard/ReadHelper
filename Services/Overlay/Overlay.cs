@@ -78,8 +78,9 @@ namespace ReadHelper.Services.Overlay
             get => rect;
             set
             {
-                OnRectChange(value);
+                Rectangle old = rect;
                 rect = value;
+                OnRectChange?.Invoke(this, new(rect, old));
             }
         }
         private Rectangle rect = new(0, 0, 0, 0);
@@ -121,6 +122,7 @@ namespace ReadHelper.Services.Overlay
             }
         }
         private ParentGadget parent = null;
+        public event EventHandler<ChangeEvent<Rectangle>> OnRectChange;
         private bool leftMouseBtnPressed = false;
         private bool rightMouseBtnPressed = false;
         private bool leftMouseBtnReleased = false;
@@ -206,8 +208,6 @@ namespace ReadHelper.Services.Overlay
             }
         }
         public virtual void Draw(SpriteBatch spriteBatch, Overlay overlay) { }
-
-        protected virtual void OnRectChange(Rectangle _rect) { }
         static void HandleEvent(ref bool previousValue, bool currentValue, Action eventRef)
         {
             if (!Equals(previousValue, currentValue))
@@ -224,6 +224,11 @@ namespace ReadHelper.Services.Overlay
             public MouseEventType EventType { get; } = type;
             public int X { get; } = pos.X;
             public int Y { get; } = pos.Y;
+        }
+        public class ChangeEvent<T>(T current, T old) : EventArgs
+        {
+            public T Current { get; } = current;
+            public T Old { get; } = old;
         }
     }
     public class ParentGadget : Gadget
