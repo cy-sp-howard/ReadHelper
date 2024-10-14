@@ -16,11 +16,10 @@ namespace ReadHelper.Services.Overlay
         {
             Rect = new Rectangle(20, 0, 500, 200);
             Resizeable = true;
-            btn = new AttachButton() { Parent = this };
+            btn = new AttachButton() { Parent = this , RelativePosition = new Point(-10, 0) };
         }
         public override void Update(GameTime gametime, MouseEventArgs mouseEvt)
         {
-            btn.RelativePosition = new Point(-10, 0);
             base.Update(gametime, mouseEvt);
         }
     }

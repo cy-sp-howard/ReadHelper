@@ -11,6 +11,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using ReadHelper.Services.Overlay.Form;
+using SharpDX.Direct3D9;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using static ReadHelper.WindowUtil;
 
 namespace ReadHelper.Services.Overlay
@@ -25,8 +27,8 @@ namespace ReadHelper.Services.Overlay
         {
             SetInputHook();
             SetRect();
-            form1 =  new MainForm() { Parent = this };
-            form2  = new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 50, 100) };
+            form1 = new MainForm() { Parent = this };
+            form2 = new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 50, 100) };
             base.Load();
         }
         public void Update(GameTime gametime)
@@ -71,7 +73,16 @@ namespace ReadHelper.Services.Overlay
     }
     public class Gadget
     {
-        public Rectangle Rect = new(0, 0, 0, 0);
+        public Rectangle Rect
+        {
+            get => rect;
+            set
+            {
+                OnRectChange(value);
+                rect = value;
+            }
+        }
+        private Rectangle rect = new(0, 0, 0, 0);
         public Point RelativePosition
         {
             get
@@ -83,7 +94,7 @@ namespace ReadHelper.Services.Overlay
             {
                 if (parent == null)
                 {
-                    Rect =  new Rectangle(value, Rect.Size);
+                    Rect = new Rectangle(value, Rect.Size);
                     return;
                 };
                 Rect = new Rectangle(value.X + parent.Rect.X, value.Y + parent.Rect.Y, Rect.Width, Rect.Height);
@@ -106,7 +117,7 @@ namespace ReadHelper.Services.Overlay
             {
                 parent?.Children.Remove(this);
                 parent = value;
-                parent?.Children.Add(this);;
+                parent?.Children.Add(this); ;
             }
         }
         private ParentGadget parent = null;
@@ -195,6 +206,8 @@ namespace ReadHelper.Services.Overlay
             }
         }
         public virtual void Draw(SpriteBatch spriteBatch, Overlay overlay) { }
+
+        protected virtual void OnRectChange(Rectangle _rect) { }
         static void HandleEvent(ref bool previousValue, bool currentValue, Action eventRef)
         {
             if (!Equals(previousValue, currentValue))

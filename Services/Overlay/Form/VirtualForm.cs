@@ -31,6 +31,9 @@ namespace ReadHelper.Services.Overlay.Form
         }
         public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
         {
+            spriteBatch.End();
+            spriteBatch.GraphicsDevice.ScissorRectangle = Rect;
+            spriteBatch.Begin(rasterizerState: new RasterizerState() { ScissorTestEnable = true });
             spriteBatch.Draw(ReadHelper.Texture.PixelTexture, Rect, bg);
             base.Draw(spriteBatch, overlay); // draw children
         }
@@ -39,6 +42,16 @@ namespace ReadHelper.Services.Overlay.Form
             Gadget topGadget = Parent.Children.MaxBy(child => child.ZIndex);
             if (Equals(topGadget, this)) return;
             ZIndex = topGadget.ZIndex + 1;
+        }
+
+        protected override void OnRectChange(Rectangle _rect)
+        {
+            Point diffPoint = _rect.Location - Rect.Location;
+            foreach (var child in Children)
+            {
+                if (Equals(child, head)) continue;
+                child.Rect = new(new Point(child.Rect.X + diffPoint.X, child.Rect.Y + diffPoint.Y), child.Rect.Size);
+            }
         }
     }
 }
