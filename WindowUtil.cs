@@ -9,7 +9,6 @@ using Microsoft.Xna.Framework;
 
 namespace ReadHelper
 {
-
     public static class WindowUtil
     {
         public const uint WS_EX_TOPMOST = 0x00000008;
