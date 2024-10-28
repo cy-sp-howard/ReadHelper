@@ -35,7 +35,7 @@ namespace ReadHelper.Services.Overlay.Form
             spriteBatch.End();
             spriteBatch.GraphicsDevice.ScissorRectangle = Rect;
             spriteBatch.Begin(rasterizerState: new RasterizerState() { ScissorTestEnable = true });
-            spriteBatch.Draw(ReadHelper.Texture.PixelTexture, Rect, bg);
+            spriteBatch.Draw(Texture.PixelTexture, Rect, bg);
             base.Draw(spriteBatch, overlay); // draw children
         }
         private void ToTop(object sender, MouseEventArgs e)

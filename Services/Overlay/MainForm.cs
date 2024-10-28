@@ -16,7 +16,7 @@ namespace ReadHelper.Services.Overlay
         {
             Rect = new Rectangle(20, 0, 500, 200);
             Resizeable = true;
-            btn = new AttachButton() { Parent = this , RelativePosition = new Point(-10, 0) };
+            btn = new AttachButton() { Parent = this, RelativePosition = new Point(0, 0) };
         }
         public override void Update(GameTime gametime, MouseEventArgs mouseEvt)
         {
@@ -25,12 +25,14 @@ namespace ReadHelper.Services.Overlay
     }
     public class AttachButton : Gadget
     {
+        readonly Texture2D text = Texture.TextTexture("Attach");
         public AttachButton()
         {
-            Size = new Point(20, 20);
+            Size = new Point(text.Width, text.Height);
         }
-        public override void Draw(SpriteBatch spriteBatch, Overlay overlay) {
-            spriteBatch.Draw(ReadHelper.Texture.PixelTexture, Rect, Color.Aqua);
+        public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
+        {
+            spriteBatch.Draw(text, Rect, Color.White);
         }
     }
 }

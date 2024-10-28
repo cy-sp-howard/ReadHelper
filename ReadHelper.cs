@@ -21,7 +21,6 @@ namespace ReadHelper
         };
         public static readonly Overlay Overlay;
         public static ReadHelper Instance;
-        public static Texture Texture;
         private System.Drawing.Point location_bak;
         private bool drawStarted = false;
 
@@ -59,7 +58,7 @@ namespace ReadHelper
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            Texture = new Texture(GraphicsDevice);
+            new Texture(GraphicsDevice);
             foreach (var item in _services)
             {
                 item.Load();
