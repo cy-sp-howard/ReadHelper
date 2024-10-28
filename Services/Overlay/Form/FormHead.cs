@@ -19,6 +19,7 @@ namespace ReadHelper.Services.Overlay.Form
         public int Height = 50;
         public FormHead()
         {
+            FollowParentPosition = false;
             color = defaultColor;
             OnMouseIn += MouseInHandler;
             OnMouseOut += MouseOutHandlerr;

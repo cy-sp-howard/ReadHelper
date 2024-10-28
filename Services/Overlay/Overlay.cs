@@ -77,6 +77,7 @@ namespace ReadHelper.Services.Overlay
             get => rect;
             set
             {
+                if (rect.Equals(value)) return;
                 Rectangle old = rect;
                 rect = value;
                 OnRectChange?.Invoke(this, new(rect, old));
@@ -100,6 +101,8 @@ namespace ReadHelper.Services.Overlay
                 Rect = new Rectangle(value.X + parent.Rect.X, value.Y + parent.Rect.Y, Rect.Width, Rect.Height);
             }
         }
+        public bool FollowParentPosition = true;
+        public Sticky StickyParent = Sticky.DEFAULT;
         public Point Size
         {
             get => Rect.Size;
@@ -234,6 +237,10 @@ namespace ReadHelper.Services.Overlay
     {
         // only set by Parent set except Overlay
         public readonly HashSet<Gadget> Children = [];
+        public ParentGadget()
+        {
+            OnRectChange += HandleRectChange;
+        }
         public override void Load()
         {
             foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
@@ -261,5 +268,34 @@ namespace ReadHelper.Services.Overlay
                 child.Draw(spriteBatch, overlay);
             }
         }
+        private void HandleRectChange(object sender, ChangeEvent<Rectangle> e)
+        {
+            Point diffPos = e.Current.Location - e.Old.Location;
+            Point diffSize = e.Current.Size - e.Old.Size;
+            foreach (var child in Children)
+            {
+                Point pos = child.Rect.Location;
+
+                if (child.FollowParentPosition)
+                {
+                    pos = new Point(child.Rect.X + diffPos.X, child.Rect.Y + diffPos.Y);
+                }
+                if ((child.StickyParent & Sticky.RIGHT) > 0)
+                {
+                    pos = new(pos.X + diffSize.X, pos.Y);
+                }
+                if ((child.StickyParent & Sticky.BOTTOM) > 0)
+                {
+                    pos = new(pos.Y, pos.Y + diffSize.Y);
+                }
+                child.Rect = new(pos, child.Rect.Size);
+            }
+        }
+    }
+    public enum Sticky
+    {
+        DEFAULT,
+        BOTTOM = 0b01,
+        RIGHT = 0b10
     }
 }

@@ -27,7 +27,6 @@ namespace ReadHelper.Services.Overlay.Form
             head = new FormHead() { Parent = this };
             resizeCorner = new ResizeCorner() { Parent = this, Disabled = true };
             OnLeftMouseBtnPress += ToTop;
-            OnRectChange += HandleRectChange;
 
         }
         public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
@@ -45,14 +44,5 @@ namespace ReadHelper.Services.Overlay.Form
             ZIndex = topGadget.ZIndex + 1;
         }
 
-        private void HandleRectChange(object sender, ChangeEvent<Rectangle> e)
-        {
-            Point diffPoint = e.Current.Location - e.Old.Location;
-            foreach (var child in Children)
-            {
-                if (Equals(child, head)) continue;
-                child.Rect = new(new Point(child.Rect.X + diffPoint.X, child.Rect.Y + diffPoint.Y), child.Rect.Size);
-            }
-        }
     }
 }
