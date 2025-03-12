@@ -1,75 +1,20 @@
-﻿using System;
-using System.Collections;
+﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using ReadHelper.Services.Overlay.Form;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using static ReadHelper.WindowUtil;
+using System.Windows.Forms;
+using ReadHelper.Services.Overlay;
+using Microsoft.Xna.Framework.Graphics;
+using SharpDX.Direct3D9;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
+using System.Diagnostics;
+using ReadHelper.Services.Overlay.Form;
 
-namespace ReadHelper.Services.Overlay
+namespace ReadHelper.Services
 {
-    public class Overlay : ParentGadget, IService
-    {
-        HookCallbackDelegate mouseHookCB;
-        VirtualForm form1;
-        VirtualForm form2;
-        MouseEventArgs mouseEvent; // mouseEvent never moved type ,after handle set null,so hard to overwrite before handle.
-        public override void Load()
-        {
-            SetInputHook();
-            SetRect();
-            form1 = new MainForm() { Parent = this };
-            form2 = new VirtualForm() { Parent = this, Rect = new Rectangle(0, 0, 50, 100) };
-            base.Load();
-        }
-        public void Update(GameTime gametime)
-        {
-            MouseState mouseState = Mouse.GetState();
-            mouseEvent = new MouseEventArgs(mouseEvent == null ? MouseEventType.MouseMoved : mouseEvent.EventType, mouseState.Position);
-            base.Update(gametime, mouseEvent);
-            mouseEvent = null;
-        }
-        public void Draw(SpriteBatch spriteBatch)
-        {
-            base.Draw(spriteBatch, this);
-        }
-        void SetRect()
-        {
-            int winWidth = ReadHelper.Instance.Graphics.PreferredBackBufferWidth;
-            int winHeight = ReadHelper.Instance.Graphics.PreferredBackBufferHeight;
-            Rect = new Rectangle(0, 0, winWidth, winHeight);
-        }
-        void SetInputHook()
-        {
-            mouseHookCB = MouseHookCallback;
-            SetWindowsHookEx(HookType.WH_MOUSE_LL, mouseHookCB, IntPtr.Zero, 0);
-        }
-        int MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-        {
-            MouseEventArgs evt = new((MouseEventType)wParam, Marshal.PtrToStructure<MouseLLHookStruct>(lParam).Point);
-
-            if (nCode != 0 || evt.EventType == MouseEventType.MouseMoved) return CallNextHookEx(HookType.WH_MOUSE_LL, nCode, wParam, lParam);
-
-            bool skip = evt.EventType == MouseEventType.LeftMouseButtonReleased || evt.EventType == MouseEventType.RightMouseButtonReleased;
-
-            mouseEvent = evt;
-            if (!skip && mouseInChild)
-            {
-                return 1;
-            };
-            return CallNextHookEx(HookType.WH_MOUSE_LL, nCode, wParam, lParam);
-
-        }
-
-    }
     public class Gadget
     {
         public Rectangle Rect
@@ -84,25 +29,82 @@ namespace ReadHelper.Services.Overlay
             }
         }
         private Rectangle rect = new(0, 0, 0, 0);
+        public int Left
+        {
+            get
+            {
+                int padding = Parent == null ? 0 : Parent.Padding.Left;
+                return RelativePosition.X + padding;
+            }
+            set
+            {
+                int padding = Parent == null ? 0 : Parent.Padding.Left;
+                RelativePosition = new Point(value + padding, RelativePosition.Y);
+            }
+        }
+        public int Top
+        {
+            get
+            {
+                int padding = Parent == null ? 0 : Parent.Padding.Top;
+                return RelativePosition.Y + padding;
+            }
+            set
+            {
+                int padding = Parent == null ? 0 : Parent.Padding.Top;
+                RelativePosition = new Point(RelativePosition.X, value + padding);
+            }
+        }
+        public int Bottom
+        {
+            get
+            {
+                int padding = Parent == null ? 0 : Parent.Padding.Bottom;
+                Point parentSize = Parent == null ? new Point(0, 0) : Parent.Size;
+                return parentSize.Y - padding - Size.Y - RelativePosition.Y;
+            }
+            set
+            {
+                int padding = Parent == null ? 0 : Parent.Padding.Bottom;
+                Point parentSize = Parent == null ? new Point(0, 0) : Parent.Size;
+                RelativePosition = new Point(RelativePosition.X, parentSize.Y - padding - Size.Y - value);
+            }
+        }
+        public int Right
+        {
+            get
+            {
+                int padding = Parent == null ? 0 : Parent.Padding.Right;
+                Point parentSize = Parent == null ? new Point(0, 0) : Parent.Size;
+                return parentSize.X - padding - Size.X - RelativePosition.X;
+            }
+            set
+            {
+                int padding = Parent == null ? 0 : Parent.Padding.Right;
+                Point parentSize = Parent == null ? new Point(0, 0) : Parent.Size;
+                RelativePosition = new Point(parentSize.X - padding - Size.X - value, RelativePosition.Y);
+            }
+        }
         public Point RelativePosition
         {
             get
             {
-                if (parent == null) return Rect.Location;
-                return new Point(Rect.X - parent.Rect.X, Rect.Y - parent.Rect.Y);
+                if (Parent == null) return Rect.Location;
+                return new Point(Rect.X - Parent.Rect.X, Rect.Y - Parent.Rect.Y);
             }
             set
             {
-                if (parent == null)
+                if (Parent == null)
                 {
                     Rect = new Rectangle(value, Rect.Size);
                     return;
                 };
-                Rect = new Rectangle(value.X + parent.Rect.X, value.Y + parent.Rect.Y, Rect.Width, Rect.Height);
+                Rect = new Rectangle(value.X + Parent.Rect.X, value.Y + Parent.Rect.Y, Rect.Width, Rect.Height);
             }
         }
+        public Padding Padding = new() { Top = 0, Bottom = 0, Left = 0, Right = 0 };
+        public Sticky ResizeStickyParent = Sticky.DEFAULT;
         public bool FollowParentPosition = true;
-        public Sticky StickyParent = Sticky.DEFAULT;
         public Point Size
         {
             get => Rect.Size;
@@ -113,17 +115,7 @@ namespace ReadHelper.Services.Overlay
         }
         public int ZIndex = 0;
         public bool Disabled = false;
-        public ParentGadget Parent
-        {
-            get => parent;
-            set
-            {
-                parent?.Children.Remove(this);
-                parent = value;
-                parent?.Children.Add(this); ;
-            }
-        }
-        private ParentGadget parent = null;
+        readonly public ParentGadget Parent = null;
         public event EventHandler<ChangeEvent<Rectangle>> OnRectChange;
         private bool leftMouseBtnPressed = false;
         private bool rightMouseBtnPressed = false;
@@ -143,6 +135,14 @@ namespace ReadHelper.Services.Overlay
         public event EventHandler<MouseEventArgs> OnMouseIn;
         public event EventHandler<MouseEventArgs> OnMouseOut;
         public bool MouseIn => mouseIn;
+        public Gadget()
+        {
+        }
+        public Gadget(ParentGadget parentGadget)
+        {
+            Parent = parentGadget;
+            Parent.Children.Add(this); ;
+        }
 
         public virtual void Load() { }
         public virtual void Update(GameTime gametime, MouseEventArgs mouseEvt) //need call first if inherit
@@ -209,7 +209,7 @@ namespace ReadHelper.Services.Overlay
                 OnRightMouseBtnClick?.Invoke(this, mouseEvt);
             }
         }
-        public virtual void Draw(SpriteBatch spriteBatch, Overlay overlay) { }
+        public virtual void Draw(SpriteBatch spriteBatch, OverlayRoot overlay) { }
         static void HandleEvent(ref bool previousValue, bool currentValue, Action eventRef)
         {
             if (!Equals(previousValue, currentValue))
@@ -233,11 +233,20 @@ namespace ReadHelper.Services.Overlay
             public T Old { get; } = old;
         }
     }
+    public class ChildGadget : Gadget
+    {
+        public ChildGadget(ParentGadget parentGadget) : base(parentGadget)
+        {
+        }
+    }
     public class ParentGadget : Gadget
     {
         // only set by Parent set except Overlay
         public readonly HashSet<Gadget> Children = [];
-        public ParentGadget()
+        public ParentGadget() {
+            OnRectChange += HandleRectChange;
+        }
+        public ParentGadget(OverlayRoot p) : base(p)
         {
             OnRectChange += HandleRectChange;
         }
@@ -251,17 +260,24 @@ namespace ReadHelper.Services.Overlay
         public override void Update(GameTime gametime, MouseEventArgs mouseEvt)
         {
             base.Update(gametime, mouseEvt);
-            int index = 0;
-            foreach (var child in Children.ToList().OrderByDescending(c => c.ZIndex))
+            List<Gadget> children = Children.ToList();
+            int index = children.Count - 1;
+            var maxZIndex = children.Max(c => c.ZIndex);
+          
+            foreach (var child in children.OrderByDescending(c => c.ZIndex))
             {
-                child.ZIndex = index * -1;
-                index++;
+                if (maxZIndex > children.Count - 1)
+                {
+                    child.ZIndex = index;
+                    index--;
+                }
                 if (child.Disabled) continue;
                 child.Update(gametime, mouseEvt);
             }
         }
-        public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
+        public override void Draw(SpriteBatch spriteBatch, OverlayRoot overlay)
         {
+
             foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
             {
                 if (child.Disabled) continue;
@@ -274,27 +290,25 @@ namespace ReadHelper.Services.Overlay
             Point diffSize = e.Current.Size - e.Old.Size;
             foreach (var child in Children)
             {
-                Point pos = child.Rect.Location;
-
                 if (child.FollowParentPosition)
                 {
-                    pos = new Point(child.Rect.X + diffPos.X, child.Rect.Y + diffPos.Y);
+                    child.Rect = new Rectangle(child.Rect.Location + diffPos, child.Rect.Size);
                 }
-                if ((child.StickyParent & Sticky.RIGHT) > 0)
+                if ((child.ResizeStickyParent & Sticky.RIGHT) > 0)
                 {
-                    pos = new(pos.X + diffSize.X, pos.Y);
+                    child.Right -= diffSize.X;
                 }
-                if ((child.StickyParent & Sticky.BOTTOM) > 0)
+                if ((child.ResizeStickyParent & Sticky.BOTTOM) > 0)
                 {
-                    pos = new(pos.Y, pos.Y + diffSize.Y);
+                    child.Bottom -= diffSize.Y;
                 }
-                child.Rect = new(pos, child.Rect.Size);
             }
         }
     }
     public enum Sticky
     {
-        DEFAULT,
+        NONE,
+        DEFAULT = 0b1100,
         BOTTOM = 0b01,
         RIGHT = 0b10
     }

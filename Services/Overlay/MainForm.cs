@@ -24,20 +24,26 @@ namespace ReadHelper.Services.Overlay
         }
         private void BuildAttachBtn()
         {
-            TextButton btn = new TextButton("Attach", this) { StickyParent = Sticky.RIGHT };
+            TextButton btn = new TextButton("Attach", this) { ResizeStickyParent = Sticky.RIGHT};
+            btn.Right = 0;
+            btn.Top = 0;
+            btn.OnLeftMouseBtnClick += delegate
+            {
+                ReadHelper.Overlay.ProcessListForm.Disabled = false;
+                ReadHelper.Overlay.ProcessListForm.ToTop();
+            };
         }
     }
-    public class TextButton : Gadget
+    public class TextButton : ChildGadget
     {
         readonly Texture2D textTexture;
         Color color = Color.White;
         Color bg = Color.Transparent;
-        public TextButton(string text, ParentGadget parent)
+        public TextButton(string text, ParentGadget parent):base(parent)
         {
-            Parent = parent;
             textTexture = Texture.TextTexture(text, new() { FontSize = 18 });
             Size = new Point(textTexture.Width / 2, textTexture.Height / 2);
-            RelativePosition = new Point(Parent.Size.X - Size.X, 100);
+            RelativePosition = new Point((Parent.Size.X - Size.X) / 2, (Parent.Size.Y - Size.Y) / 2);
             OnMouseIn += MouseInHandler;
             OnMouseOut += MouseOutHandler;
         }
@@ -49,7 +55,7 @@ namespace ReadHelper.Services.Overlay
         {
             bg = Color.Transparent;
         }
-        public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
+        public override void Draw(SpriteBatch spriteBatch, OverlayRoot overlay)
         {
             spriteBatch.Draw(Texture.PixelTexture, Rect, bg);
             spriteBatch.Draw(textTexture, Rect, color);

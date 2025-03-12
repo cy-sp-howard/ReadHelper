@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using Microsoft.Xna.Framework.Input;
+using System.Diagnostics;
 
 namespace ReadHelper.Services.Overlay.Form
 {
@@ -20,16 +21,19 @@ namespace ReadHelper.Services.Overlay.Form
         readonly ResizeCorner resizeCorner;
         public bool Moving { get => head.Moving; }
         public bool Resizing { get => resizeCorner.Resizing; }
+        public Point MinSize = new Point(300,100);
+        public Point MaxSize = new Point(-1, -1);
         public bool Resizeable { get => !resizeCorner.Disabled; set => resizeCorner.Disabled = !value; }
-        public VirtualForm()
+        public VirtualForm():base(ReadHelper.Overlay)
         {
             AllForms.Add(this);
-            head = new FormHead() { Parent = this };
-            resizeCorner = new ResizeCorner() { Parent = this, Disabled = true };
-            OnLeftMouseBtnPress += ToTop;
+            Padding = new() { Top = 10, Bottom = 10, Left = 10, Right = 10 };
+            head = new FormHead(this);
+            resizeCorner = new ResizeCorner(this) {  Disabled = true };
+            OnLeftMouseBtnPress += delegate { ToTop(); };
 
         }
-        public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
+        public override void Draw(SpriteBatch spriteBatch, OverlayRoot overlay)
         {
             spriteBatch.End();
             spriteBatch.GraphicsDevice.ScissorRectangle = Rect;
@@ -37,7 +41,7 @@ namespace ReadHelper.Services.Overlay.Form
             spriteBatch.Draw(Texture.PixelTexture, Rect, bg);
             base.Draw(spriteBatch, overlay); // draw children
         }
-        private void ToTop(object sender, MouseEventArgs e)
+        public void ToTop()
         {
             Gadget topGadget = Parent.Children.MaxBy(child => child.ZIndex);
             if (Equals(topGadget, this)) return;

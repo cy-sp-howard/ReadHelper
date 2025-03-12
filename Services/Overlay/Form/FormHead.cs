@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,17 +10,19 @@ using Microsoft.Xna.Framework.Input;
 
 namespace ReadHelper.Services.Overlay.Form
 {
-    public class FormHead : Gadget
+    public class FormHead : ChildGadget
     {
         Color defaultColor = new(10, 10, 10, 0);
         Color color;
         Point mouseMoveStartPos = new(-1, -1);
         Point formMoveStartPos = new (-1, -1);
         public bool Moving = false;
-        public int Height = 50;
-        public FormHead()
+        private int Height = 50;
+        public FormHead(ParentGadget p):base(p)
         {
             FollowParentPosition = false;
+            Parent.Padding.Top += Height;
+
             color = defaultColor;
             OnMouseIn += MouseInHandler;
             OnMouseOut += MouseOutHandlerr;
@@ -72,7 +75,7 @@ namespace ReadHelper.Services.Overlay.Form
 
             base.Update(gametime, mouseEvt);
         }
-        public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
+        public override void Draw(SpriteBatch spriteBatch, OverlayRoot overlay)
         {
             spriteBatch.Draw(Texture.PixelTexture, Rect, color);
         }

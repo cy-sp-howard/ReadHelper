@@ -17,9 +17,9 @@ namespace ReadHelper
         public IntPtr FormHandle { get; private set; }
         public Form Form { get; private set; }
         private static readonly IService[] _services = new IService[] {
-            Overlay        = new Overlay()
+            Overlay        = new OverlayRoot()
         };
-        public static readonly Overlay Overlay;
+        public static readonly OverlayRoot Overlay;
         public static ReadHelper Instance;
         private System.Drawing.Point location_bak;
         private bool drawStarted = false;

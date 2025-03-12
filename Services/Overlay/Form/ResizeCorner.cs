@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,20 +10,27 @@ using Microsoft.Xna.Framework.Input;
 
 namespace ReadHelper.Services.Overlay.Form
 {
-    public class ResizeCorner : Gadget
+    public class ResizeCorner : ChildGadget
     {
 
         Point resizeStartPos = new(-1, -1);
         Point resizeStartSize = new(-1, -1);
         Color color = Color.Transparent;
         public bool Resizing = false;
-        static ResizeCorner()
+        public ResizeCorner(ParentGadget p):base(p)
         {
-       
+            Size = new Point(20, 20);
+            Bottom = Parent.Padding.Right * -1;
+            Right = Parent.Padding.Bottom * -1;
+            ResizeStickyParent = Sticky.RIGHT | Sticky.BOTTOM;
+            OnMouseIn += MouseInHandler;
+            OnMouseOut += MouseOutHandler;
+            OnLeftMouseBtnPress += MousePressHandler;
+            OnLeftMouseBtnRelease += MouseReleaseHandler;
         }
         void MouseInHandler(object sender, MouseEventArgs e)
         {
-            color = new Color(30, 30, 30,0);
+            color = new Color(30, 30, 30, 0);
         }
         void MouseOutHandler(object sender, MouseEventArgs e)
         {
@@ -47,8 +55,27 @@ namespace ReadHelper.Services.Overlay.Form
             }
             int width = evt.X - resizeStartPos.X + resizeStartSize.X;
             int height = evt.Y - resizeStartPos.Y + resizeStartSize.Y;
-            if (width <= 100) width = 100;
-            if (height <= 100) height = 100;
+            if (Parent is VirtualForm parentForm )
+            {
+                if (width < parentForm.MinSize.X)
+                {
+                    width = parentForm.MinSize.X;
+                } else if(parentForm.MaxSize.X > 0 && width > parentForm.MaxSize.X)
+                {
+                    width = parentForm.MaxSize.X;
+
+                }
+                if (height < parentForm.MinSize.Y)
+                {
+                    height = parentForm.MinSize.Y;
+                }
+                else if (parentForm.MaxSize.Y > 0 && width > parentForm.MaxSize.Y)
+                {
+                    height = parentForm.MaxSize.Y;
+
+                }
+
+            }
             Parent.Rect = new Rectangle(Parent.Rect.X, Parent.Rect.Y, width, height);
         }
         void CheckResizingForm()
@@ -60,24 +87,14 @@ namespace ReadHelper.Services.Overlay.Form
                 Resizing = false;
             }
         }
-        public override void Load()
-        {
-            Rect = new Rectangle(0, 0, 20, 20);
-            OnMouseIn += MouseInHandler;
-            OnMouseOut += MouseOutHandler;
-            OnLeftMouseBtnPress += MousePressHandler;
-            OnLeftMouseBtnRelease += MouseReleaseHandler;
-            base.Load();
-        }
         public override void Update(GameTime gametime, MouseEventArgs mouseEvt)
         {
-            RelativePosition = new Point(Parent.Rect.Width - Rect.Width, Parent.Rect.Height - Rect.Height);
             CheckResizingForm();
             MouseMoveHandler(mouseEvt);
 
             base.Update(gametime, mouseEvt);
         }
-        public override void Draw(SpriteBatch spriteBatch, Overlay overlay)
+        public override void Draw(SpriteBatch spriteBatch, OverlayRoot overlay)
         {
 
             spriteBatch.Draw(Texture.CornerTexture, Rect, color);
