@@ -10,15 +10,15 @@ using Microsoft.Xna.Framework.Input;
 
 namespace ReadHelper.Services.Overlay.Form
 {
-    public class FormHead : ChildGadget
+    public class FormHead : Gadget
     {
         Color defaultColor = new(10, 10, 10, 0);
         Color color;
         Point mouseMoveStartPos = new(-1, -1);
-        Point formMoveStartPos = new (-1, -1);
+        Point formMoveStartPos = new(-1, -1);
         public bool Moving = false;
         private int Height = 50;
-        public FormHead(ParentGadget p):base(p)
+        public FormHead(Gadget p) : base(p)
         {
             FollowParentPosition = false;
             Parent.Padding.Top += Height;

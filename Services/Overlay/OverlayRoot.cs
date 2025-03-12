@@ -17,7 +17,7 @@ using static ReadHelper.WindowUtil;
 
 namespace ReadHelper.Services.Overlay
 {
-    public class OverlayRoot : ParentGadget, IService
+    public class OverlayRoot : Gadget, IService
     {
         public ProcessList ProcessListForm { get => _ProcessListForm; }
         private MainForm _MainForm;

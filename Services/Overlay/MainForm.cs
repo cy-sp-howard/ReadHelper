@@ -34,12 +34,12 @@ namespace ReadHelper.Services.Overlay
             };
         }
     }
-    public class TextButton : ChildGadget
+    public class TextButton : Gadget
     {
         readonly Texture2D textTexture;
         Color color = Color.White;
         Color bg = Color.Transparent;
-        public TextButton(string text, ParentGadget parent):base(parent)
+        public TextButton(string text, Gadget parent):base(parent)
         {
             textTexture = Texture.TextTexture(text, new() { FontSize = 18 });
             Size = new Point(textTexture.Width / 2, textTexture.Height / 2);

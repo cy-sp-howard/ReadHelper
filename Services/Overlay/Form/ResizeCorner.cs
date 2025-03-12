@@ -10,14 +10,14 @@ using Microsoft.Xna.Framework.Input;
 
 namespace ReadHelper.Services.Overlay.Form
 {
-    public class ResizeCorner : ChildGadget
+    public class ResizeCorner : Gadget
     {
 
         Point resizeStartPos = new(-1, -1);
         Point resizeStartSize = new(-1, -1);
         Color color = Color.Transparent;
         public bool Resizing = false;
-        public ResizeCorner(ParentGadget p):base(p)
+        public ResizeCorner(Gadget p):base(p)
         {
             Size = new Point(20, 20);
             Bottom = Parent.Padding.Right * -1;

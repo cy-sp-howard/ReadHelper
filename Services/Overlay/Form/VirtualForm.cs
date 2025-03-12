@@ -12,7 +12,7 @@ using System.Diagnostics;
 
 namespace ReadHelper.Services.Overlay.Form
 {
-    public class VirtualForm : ParentGadget
+    public class VirtualForm : Gadget
     {
 
         public static readonly HashSet<VirtualForm> AllForms = [];

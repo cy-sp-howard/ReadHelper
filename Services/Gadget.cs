@@ -115,7 +115,9 @@ namespace ReadHelper.Services
         }
         public int ZIndex = 0;
         public bool Disabled = false;
-        readonly public ParentGadget Parent = null;
+        readonly public Gadget Parent = null;
+
+        public readonly HashSet<Gadget> Children = [];
         public event EventHandler<ChangeEvent<Rectangle>> OnRectChange;
         private bool leftMouseBtnPressed = false;
         private bool rightMouseBtnPressed = false;
@@ -137,14 +139,22 @@ namespace ReadHelper.Services
         public bool MouseIn => mouseIn;
         public Gadget()
         {
+            OnRectChange += HandleRectChange;
         }
-        public Gadget(ParentGadget parentGadget)
+        public Gadget(Gadget parentGadget)
         {
             Parent = parentGadget;
             Parent.Children.Add(this); ;
+            OnRectChange += HandleRectChange;
         }
 
-        public virtual void Load() { }
+        public virtual void Load()
+        {
+            foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
+            {
+                child.Load();
+            }
+        }
         public virtual void Update(GameTime gametime, MouseEventArgs mouseEvt) //need call first if inherit
         {
             bool mouseInRect = Rect.Contains(new Point(mouseEvt.X, mouseEvt.Y));
@@ -208,8 +218,33 @@ namespace ReadHelper.Services
                 readyForRightClick = false;
                 OnRightMouseBtnClick?.Invoke(this, mouseEvt);
             }
+
+
+            List<Gadget> children = Children.ToList();
+            int index = children.Count - 1;
+            int maxZIndex = children.Count == 0 ? 0 : children.Max(c => c.ZIndex);
+
+            foreach (var child in children.OrderByDescending(c => c.ZIndex))
+            {
+                if (maxZIndex > children.Count - 1)
+                {
+                    child.ZIndex = index;
+                    index--;
+                }
+                if (child.Disabled) continue;
+                child.Update(gametime, mouseEvt);
+            }
+
         }
-        public virtual void Draw(SpriteBatch spriteBatch, OverlayRoot overlay) { }
+        public virtual void Draw(SpriteBatch spriteBatch, OverlayRoot overlay)
+        {
+            foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
+            {
+                if (child.Disabled) continue;
+                child.Draw(spriteBatch, overlay);
+            }
+
+        }
         static void HandleEvent(ref bool previousValue, bool currentValue, Action eventRef)
         {
             if (!Equals(previousValue, currentValue))
@@ -231,58 +266,6 @@ namespace ReadHelper.Services
         {
             public T Current { get; } = current;
             public T Old { get; } = old;
-        }
-    }
-    public class ChildGadget : Gadget
-    {
-        public ChildGadget(ParentGadget parentGadget) : base(parentGadget)
-        {
-        }
-    }
-    public class ParentGadget : Gadget
-    {
-        // only set by Parent set except Overlay
-        public readonly HashSet<Gadget> Children = [];
-        public ParentGadget() {
-            OnRectChange += HandleRectChange;
-        }
-        public ParentGadget(OverlayRoot p) : base(p)
-        {
-            OnRectChange += HandleRectChange;
-        }
-        public override void Load()
-        {
-            foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
-            {
-                child.Load();
-            }
-        }
-        public override void Update(GameTime gametime, MouseEventArgs mouseEvt)
-        {
-            base.Update(gametime, mouseEvt);
-            List<Gadget> children = Children.ToList();
-            int index = children.Count - 1;
-            var maxZIndex = children.Max(c => c.ZIndex);
-          
-            foreach (var child in children.OrderByDescending(c => c.ZIndex))
-            {
-                if (maxZIndex > children.Count - 1)
-                {
-                    child.ZIndex = index;
-                    index--;
-                }
-                if (child.Disabled) continue;
-                child.Update(gametime, mouseEvt);
-            }
-        }
-        public override void Draw(SpriteBatch spriteBatch, OverlayRoot overlay)
-        {
-
-            foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
-            {
-                if (child.Disabled) continue;
-                child.Draw(spriteBatch, overlay);
-            }
         }
         private void HandleRectChange(object sender, ChangeEvent<Rectangle> e)
         {
