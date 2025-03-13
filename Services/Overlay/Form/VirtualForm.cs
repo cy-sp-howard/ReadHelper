@@ -17,7 +17,7 @@ namespace ReadHelper.Services.Overlay.Form
 
         public static readonly HashSet<VirtualForm> AllForms = [];
         Color bg = new(33, 33, 33);
-        readonly FormHead head;
+        public readonly FormHead head;
         readonly ResizeCorner resizeCorner;
         public bool Moving { get => head.Moving; }
         public bool Resizing { get => resizeCorner.Resizing; }
@@ -33,13 +33,9 @@ namespace ReadHelper.Services.Overlay.Form
             OnLeftMouseBtnPress += delegate { ToTop(); };
 
         }
-        public override void Draw(SpriteBatch spriteBatch, OverlayRoot overlay)
+        public override void DrawInRect(SpriteBatch spriteBatch, OverlayRoot overlay)
         {
-            spriteBatch.End();
-            spriteBatch.GraphicsDevice.ScissorRectangle = Rect;
-            spriteBatch.Begin(rasterizerState: new RasterizerState() { ScissorTestEnable = true });
             spriteBatch.Draw(Texture.PixelTexture, Rect, bg);
-            base.Draw(spriteBatch, overlay); // draw children
         }
         public void ToTop()
         {

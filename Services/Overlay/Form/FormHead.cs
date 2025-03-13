@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using SharpDX.Direct3D9;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ReadHelper.Services.Overlay.Form
 {
@@ -16,6 +18,17 @@ namespace ReadHelper.Services.Overlay.Form
         Color color;
         Point mouseMoveStartPos = new(-1, -1);
         Point formMoveStartPos = new(-1, -1);
+        public string Title
+        {
+            get => _title;
+            set
+            {
+                _title = value;
+                TitleTexture = Texture.TextTexture(value, new() { FontSize = 24 });
+            }
+        }
+        string _title = "";
+        Texture2D TitleTexture;
         public bool Moving = false;
         private int Height = 50;
         public FormHead(Gadget p) : base(p)
@@ -23,9 +36,10 @@ namespace ReadHelper.Services.Overlay.Form
             FollowParentPosition = false;
             Parent.Padding.Top += Height;
 
+
             color = defaultColor;
             OnMouseIn += MouseInHandler;
-            OnMouseOut += MouseOutHandlerr;
+            OnMouseOut += MouseOutHandler;
             OnLeftMouseBtnPress += MousePressHandler;
             OnLeftMouseBtnRelease += MouseReleaseHandler;
         }
@@ -33,7 +47,7 @@ namespace ReadHelper.Services.Overlay.Form
         {
             color = new Color(30, 30, 30, 0);
         }
-        void MouseOutHandlerr(object sender, MouseEventArgs e)
+        void MouseOutHandler(object sender, MouseEventArgs e)
         {
             color = defaultColor;
         }
@@ -78,6 +92,12 @@ namespace ReadHelper.Services.Overlay.Form
         public override void Draw(SpriteBatch spriteBatch, OverlayRoot overlay)
         {
             spriteBatch.Draw(Texture.PixelTexture, Rect, color);
+            if (TitleTexture != null)
+            {
+                int textWidth = TitleTexture.Width / 2;
+                int textHeight = TitleTexture.Height / 2;
+                spriteBatch.Draw(TitleTexture, new Rectangle(Rect.X + 10,Rect.Y + Rect.Height / 2 - textHeight / 2, textWidth, textHeight), Color.White);
+            }
         }
 
 

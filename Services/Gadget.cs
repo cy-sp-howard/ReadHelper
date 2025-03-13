@@ -103,6 +103,7 @@ namespace ReadHelper.Services
             }
         }
         public Padding Padding = new() { Top = 0, Bottom = 0, Left = 0, Right = 0 };
+        public Rectangle InnerRect { get => new Rectangle(Rect.Left + Padding.Left, Rect.Top + Padding.Top, Rect.Width - Padding.Left - Padding.Right, Rect.Height - Padding.Top - Padding.Bottom); }
         public Sticky ResizeStickyParent = Sticky.DEFAULT;
         public bool FollowParentPosition = true;
         public Point Size
@@ -114,8 +115,33 @@ namespace ReadHelper.Services
             }
         }
         public int ZIndex = 0;
-        public bool Disabled = false;
-        readonly public Gadget Parent = null;
+        public bool Disabled
+        {
+            get => _disabled; set
+            {
+                _disabled = value;
+                if (_disabled) { OnDisable?.Invoke(this, new()); }
+                else { OnEnable?.Invoke(this, new()); }
+            }
+        }
+        private bool _disabled = false;
+        public Gadget Parent
+        {
+            get => _parent; set
+            {
+                if (value != null)
+                {
+                    _parent = value;
+                    _parent.Children.Add(this);
+                }
+                else
+                {
+                    _parent.Children.Remove(this);
+                    _parent = value;
+                }
+            }
+        }
+        private Gadget _parent;
 
         public readonly HashSet<Gadget> Children = [];
         public event EventHandler<ChangeEvent<Rectangle>> OnRectChange;
@@ -136,6 +162,9 @@ namespace ReadHelper.Services
         private bool mouseOut = false;
         public event EventHandler<MouseEventArgs> OnMouseIn;
         public event EventHandler<MouseEventArgs> OnMouseOut;
+        public event EventHandler<MouseEventArgs> OnMouseWheel;
+        public event EventHandler<EventArgs> OnEnable;
+        public event EventHandler<EventArgs> OnDisable;
         public bool MouseIn => mouseIn;
         public Gadget()
         {
@@ -144,7 +173,6 @@ namespace ReadHelper.Services
         public Gadget(Gadget parentGadget)
         {
             Parent = parentGadget;
-            Parent.Children.Add(this); ;
             OnRectChange += HandleRectChange;
         }
 
@@ -177,7 +205,13 @@ namespace ReadHelper.Services
             });
 
 
+            if (mouseInRect && mouseEvt.EventType == MouseEventType.MouseWheelScrolled)
+            {
+                OnMouseWheel?.Invoke(this, mouseEvt);
+            }
+
             bool currentValue = mouseEvt.EventType == MouseEventType.LeftMouseButtonPressed;
+
             if (mouseInRect)
             {
                 HandleEvent(ref leftMouseBtnPressed, currentValue, () =>
@@ -236,13 +270,34 @@ namespace ReadHelper.Services
             }
 
         }
+        public virtual void DrawInRect(SpriteBatch spriteBatch, OverlayRoot overlay)
+        {
+
+        }
+        public virtual void DrawInRectAfterChildren(SpriteBatch spriteBatch, OverlayRoot overlay)
+        {
+
+        }
         public virtual void Draw(SpriteBatch spriteBatch, OverlayRoot overlay)
         {
+            Rectangle b_rect = spriteBatch.GraphicsDevice.ScissorRectangle;
+            Rectangle intersectRect = Rectangle.Intersect(b_rect, Rect);
+            if (intersectRect.IsEmpty) return;
+            spriteBatch.End();
+            spriteBatch.GraphicsDevice.ScissorRectangle = intersectRect;
+            spriteBatch.Begin(rasterizerState: new RasterizerState() { ScissorTestEnable = true });
+            DrawInRect(spriteBatch, overlay);
+
             foreach (var child in Children.ToList().OrderBy(c => c.ZIndex))
             {
                 if (child.Disabled) continue;
                 child.Draw(spriteBatch, overlay);
             }
+            DrawInRectAfterChildren(spriteBatch, overlay);
+
+            spriteBatch.End();
+            spriteBatch.GraphicsDevice.ScissorRectangle = b_rect;
+            spriteBatch.Begin(rasterizerState: new RasterizerState() { ScissorTestEnable = true });
 
         }
         static void HandleEvent(ref bool previousValue, bool currentValue, Action eventRef)
@@ -256,11 +311,12 @@ namespace ReadHelper.Services
                 }
             }
         }
-        public class MouseEventArgs(WindowUtil.MouseEventType type, Point pos) : EventArgs
+        public class MouseEventArgs(WindowUtil.MouseEventType type, Point pos, int wheel = 0) : EventArgs
         {
             public MouseEventType EventType { get; } = type;
             public int X { get; } = pos.X;
             public int Y { get; } = pos.Y;
+            public int Wheel { get; } = wheel;
         }
         public class ChangeEvent<T>(T current, T old) : EventArgs
         {

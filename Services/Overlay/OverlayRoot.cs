@@ -20,6 +20,7 @@ namespace ReadHelper.Services.Overlay
     public class OverlayRoot : Gadget, IService
     {
         public ProcessList ProcessListForm { get => _ProcessListForm; }
+        readonly public AttachProcess TargetProcess = new();
         private MainForm _MainForm;
         private ProcessList _ProcessListForm;
         HookCallbackDelegate mouseHookCB;
@@ -29,13 +30,21 @@ namespace ReadHelper.Services.Overlay
             SetInputHook();
             SetRect();
             _MainForm = new MainForm();
-            _ProcessListForm = new ProcessList() { Disabled = true};
+            _ProcessListForm = new ProcessList() { Disabled = true };
             base.Load();
         }
         public void Update(GameTime gametime)
         {
             MouseState mouseState = Mouse.GetState();
-            mouseEvent = new MouseEventArgs(mouseEvent == null ? MouseEventType.MouseMoved : mouseEvent.EventType, mouseState.Position);
+
+            if (mouseEvent == null)
+            {
+                mouseEvent = new MouseEventArgs(MouseEventType.MouseMoved, mouseState.Position);
+            }
+            else
+            {
+                mouseEvent = new MouseEventArgs(mouseEvent.EventType, mouseState.Position, mouseEvent.Wheel);
+            }
             base.Update(gametime, mouseEvent);
             mouseEvent = null;
         }
@@ -56,15 +65,16 @@ namespace ReadHelper.Services.Overlay
         }
         int MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            MouseEventArgs evt = new((MouseEventType)wParam, Marshal.PtrToStructure<MouseLLHookStruct>(lParam).Point);
+            MouseLLHookStruct mouseArgs = Marshal.PtrToStructure<MouseLLHookStruct>(lParam);
+            MouseEventArgs evt = new((MouseEventType)wParam, mouseArgs.Point, mouseArgs.MouseData);
 
             if (nCode != 0 || evt.EventType == MouseEventType.MouseMoved) return CallNextHookEx(HookType.WH_MOUSE_LL, nCode, wParam, lParam);
 
             bool skip = evt.EventType == MouseEventType.LeftMouseButtonReleased || evt.EventType == MouseEventType.RightMouseButtonReleased;
-
             mouseEvent = evt;
             if (!skip && mouseInChild)
             {
+                // Pierce
                 return 1;
             };
             return CallNextHookEx(HookType.WH_MOUSE_LL, nCode, wParam, lParam);

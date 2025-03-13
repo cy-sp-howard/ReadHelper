@@ -9,11 +9,7 @@ namespace ReadHelper.Services
 {
     public class AttachProcess
     {
-        public Process process
-        {
-            get => _process;
-        }
-        private Process _process;
+        public Process Process { get; set; }
         
     }
 }
